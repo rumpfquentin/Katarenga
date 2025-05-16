@@ -1,4 +1,5 @@
-file = open('r', "Puzzles.txt.rtf")
+with open("Puzzles.txt.rtf") as file:
+    print(file.readlines())
 print(file)
 class Event:
     def __init__(self):
