@@ -1,0 +1,8 @@
+[r,y,b,g,g,r,g,b,y,y,b,r,b,g,r,y]
+[r,y,g,b,g,y,r,y,b,b,g,r,y,r,b,g]
+[r,g,b,y,y,y,g,r,b,b,r,g,g,r,y,b]
+[r,g,b,y,y,y,b,r,b,g,r,g,g,r,y,b]
+[r,g,y,b,y,r,y,g,b,g,b,r,g,b,r,y]
+[r,g,b,y,y,y,b,r,g,r,g,b,b,y,r,g]
+[r,y,b,g,g,y,b,r,b,g,r,y,y,r,g,b]
+[r,y,b,g,g,y,g,r,b,b,r,y,y,r,g,b]
