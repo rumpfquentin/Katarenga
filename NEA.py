@@ -30,7 +30,7 @@ class Board:
             board[0][col]['piece'] = self.pieces['B'][col]
             board[7][col]['piece'] = self.pieces['W'][col]
         self.boardlayout = board   
-        self.legal_moves = {}
+        self.legal_moves = []
 
     def create_pieces(self):
         for col in range(8):
@@ -62,30 +62,36 @@ class Board:
         if not piece_to_move:
             print('No piece found with that label')
             return
+        
+        self.get_legal_moves()
+        islegal = False
+        move = (row, col)
+        for legal_move in self.legal_moves:
+            if legal_move[0] == piece_to_move.label and legal_move[1] == move:
+                islegal = True
+                break
 
+        if not islegal:
+            print('Not a legal move')
+            return
+        
+        self.legal_moves = []
 
         self.boardlayout[old_row][old_col]['piece'] = None
         self.boardlayout[row][col]['piece'] = piece_to_move
 
     def get_legal_moves(self):
         for r in range(len(self.boardlayout)):
-            for c in range(len(self.boardlayout[i])):
+            for c in range(len(self.boardlayout[r])):
                 if self.boardlayout[r][c]['piece']:
                     if self.boardlayout[r][c]['colour'] == 'R':
-                        for i in range(r, -1 ,-1):
-                            if self.boardlayout[i][c]['colour'] != 'R':
-                                pass
-                            if self.boardlayout[i][c]['piece']:
-                                if self.boardlayout[i][c]['piece'].player == self.boardlayout[r][c]['piece'].player:
-                                    pass
-
-                                
+                        self.rook_moves(r,c)   
                     elif self.boardlayout[r][c]['colour'] == 'B':
-                        pass
+                        self.king_moves(r,c) 
                     elif self.boardlayout[r][c]['colour'] == 'G':
-                        pass
+                        self.knight_moves(r,c) 
                     elif self.boardlayout[r][c]['colour'] == 'Y':
-                        pass
+                        self.bishop_moves(r,c) 
 
 
     def rook_moves(self, row, col):
@@ -128,9 +134,10 @@ class Board:
         piece = self.boardlayout[row][col]['piece']
         for move in all_moves:
             if 0 <= move[0] <= 7 and 0 <= move[1] <= 7:
-                if piece:
-                    if piece.player != self.boardlayout[move[0]][move[1]].player:
+                if self.boardlayout[move[0]][move[1]]['piece']:
+                    if piece.player != self.boardlayout[move[0]][move[1]]['piece'].player:
                         self.legal_moves.append((piece.label, (move)))
+                self.legal_moves.append((piece.label, (move)))
 
     def bishop_moves(self, row, col):
         piece = self.boardlayout[row][col]['piece']
@@ -189,9 +196,10 @@ class Board:
         piece = self.boardlayout[row][col]['piece']
         for move in all_moves:
             if 0 <= move[0] <= 7 and 0 <= move[1] <= 7:
-                if piece:
-                    if piece.player != self.boardlayout[move[0]][move[1]].player:
+                if self.boardlayout[move[0]][move[1]]['piece']:
+                    if piece.player != self.boardlayout[move[0]][move[1]]['piece'].player:
                         self.legal_moves.append((piece.label, (move)))
+                self.legal_moves.append((piece.label, (move)))
     
     def printGrid(self):
         print("    A   B   C   D   E   F   G   H")
@@ -256,5 +264,6 @@ def Rotate180(grid):
 
 B = Board()
 B.printGrid()
-B.movepiece('W')
-B.printGrid()
+while True:
+    B.movepiece(input('Enter what player you are: ').upper())
+    B.printGrid()
