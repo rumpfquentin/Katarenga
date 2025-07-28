@@ -30,6 +30,7 @@ class Board:
             board[0][col]['piece'] = self.pieces['B'][col]
             board[7][col]['piece'] = self.pieces['W'][col]
         self.boardlayout = board   
+        self.legal_moves = {}
 
     def create_pieces(self):
         for col in range(8):
@@ -77,7 +78,7 @@ class Board:
                             if self.boardlayout[i][c]['piece']:
                                 if self.boardlayout[i][c]['piece'].player == self.boardlayout[r][c]['piece'].player:
                                     pass
-                                
+
                                 
                     elif self.boardlayout[r][c]['colour'] == 'B':
                         pass
@@ -87,7 +88,47 @@ class Board:
                         pass
 
 
+    def rook_moves(self, row, col):
+        piece = self.boardlayout[row][col]['piece']
+        for c in range(col-1, -1, -1):
+            if self.boardlayout[row][c]['piece']:
+                if self.boardlayout[row][c]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+            self.legal_moves.append((piece.label, (row, c)))
+            if self.boardlayout[row][c]['colour'] == 'R':
+                break
+        for c in range(col+1, 8):
+            if self.boardlayout[row][c]['piece']:
+                if self.boardlayout[row][c]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+            self.legal_moves.append((piece.label, (row, c)))
+            if self.boardlayout[row][c]['colour'] == 'R':
+                break
+        for r in range(row-1, -1, -1):
+            if self.boardlayout[r][col]['piece']:
+                if self.boardlayout[r][col]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+            self.legal_moves.append((piece.label, (r, col)))
+            if self.boardlayout[r][col]['colour'] == 'R':
+                break
+        for r in range(row+1, 8):
+            if self.boardlayout[r][col]['piece']:
+                if self.boardlayout[r][col]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+            self.legal_moves.append((piece.label, (r, col)))
+            if self.boardlayout[r][col]['colour'] == 'R':
+                break
 
+            
+        
+
+
+    def bishop_moves(self, row, col):
+        pass
+    def bishop_moves(self, row, col):
+        pass
+    def bishop_moves(self, row, col):
+        pass
 
     
         
