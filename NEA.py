@@ -123,21 +123,98 @@ class Board:
         
 
 
-    def bishop_moves(self, row, col):
-        pass
-    def bishop_moves(self, row, col):
-        pass
-    def bishop_moves(self, row, col):
-        pass
+    def knight_moves(self, row, col):
+        all_moves = [(row +2, col-1), (row+2, col+1), (row+1, col-2), (row+1, col+2), (row-1, col-2), (row-1, col+2), (row-2, col-1), (row-2, col+1)]
+        piece = self.boardlayout[row][col]['piece']
+        for move in all_moves:
+            if 0 <= move[0] <= 7 and 0 <= move[1] <= 7:
+                if piece:
+                    if piece.player != self.boardlayout[move[0]][move[1]].player:
+                        self.legal_moves.append((piece.label, (move)))
 
+    def bishop_moves(self, row, col):
+        piece = self.boardlayout[row][col]['piece']
+        i = 1
+        for r in range(row-1, -1, -1):
+            if col-i < 0:
+                break
+            if self.boardlayout[r][col-i]['piece']:
+                if self.boardlayout[r][col-i]['piece'].player == piece.player:
+                    break
+            self.legal_moves.append((piece.label, (r, col-i)))
+            if self.boardlayout[r][col-i]['colour'] == 'Y':
+                break
+            i+=1
+        i = 1
+        for r in range(row-1, -1, -1):
+            if col+i > 7:
+                break
+            if self.boardlayout[r][col+i]['piece']:
+                if self.boardlayout[r][col+i]['piece'].player == piece.player:
+                    break
+            self.legal_moves.append((piece.label, (r, col+i)))
+            if self.boardlayout[r][col+i]['colour'] == 'Y':
+                break
+            i+=1
+        i = 1
+        for r in range(row+1, 8):
+            if col - r > 0:
+                break
+            if self.boardlayout[row][col-i]['piece']:
+                if self.boardlayout[row][col-i]['piece'].player == piece.player:
+                    break
+            self.legal_moves.append((piece.label, (row, col-i)))
+            if self.boardlayout[row][col-i]['colour'] == 'Y':
+                break
+            i+=1
+        i = 0
+        for r in range(row+1, 8):
+            if col+i >7:
+                break
+            if self.boardlayout[row][col+i]['piece']:
+                if self.boardlayout[row][col+i]['piece'].player == piece.player:
+                    break
+            self.legal_moves.append((piece.label, (row, col+i)))
+            if self.boardlayout[row][col+i]['colour'] == 'Y':
+                break
+            i+=1
+            
     
-        
-        
-        
+            
 
 
 
-        
+    def king_moves(self, row, col):
+        all_moves = [(row +1, col-1), (row+1, col+1), (row+1, col), (row, col+1), (row, col-1), (row-1, col+1), (row-1, col-1), (row-1, col)]
+        piece = self.boardlayout[row][col]['piece']
+        for move in all_moves:
+            if 0 <= move[0] <= 7 and 0 <= move[1] <= 7:
+                if piece:
+                    if piece.player != self.boardlayout[move[0]][move[1]].player:
+                        self.legal_moves.append((piece.label, (move)))
+    
+    def printGrid(self):
+        print("    A   B   C   D   E   F   G   H")
+        print("  +---+---+---+---+---+---+---+---+")
+        for row_num, row in enumerate(self.boardlayout):
+            row_str = f'{8-row_num}  |'
+            for square in row:
+                if square['piece']:
+                    piece = square['piece'].label
+                else:
+                    piece = '  '
+                row_str += f"{square['colour']}{piece}|"
+            print(row_str + f" {8 - row_num}")
+            print("  +---+---+---+---+---+---+---+---+")
+        print("    A   B   C   D   E   F   G   H")
+
+def RightRotate90(grid):
+    return [list(reversed(col)) for col in zip(*grid)]
+def LeftRotate90(grid):
+    return [list(row) for row in zip(*grid)][::-1]
+    
+def Rotate180(grid):
+    return  [row[::-1] for row in grid[::-1]]
 
     def randomlayout(self):
         pass
@@ -176,31 +253,6 @@ class Board:
         #     board[0][col]['piece'] = f'B{col}'
         #     board[7][col]['piece'] = f'W{col}'
         # self.boardlayout = board      
-
-
-    
-    def printGrid(self):
-        print("    A   B   C   D   E   F   G   H")
-        print("  +---+---+---+---+---+---+---+---+")
-        for row_num, row in enumerate(self.boardlayout):
-            row_str = f'{8-row_num}  |'
-            for square in row:
-                if square['piece']:
-                    piece = square['piece'].label
-                else:
-                    piece = '  '
-                row_str += f"{square['colour']}{piece}|"
-            print(row_str + f" {8 - row_num}")
-            print("  +---+---+---+---+---+---+---+---+")
-        print("    A   B   C   D   E   F   G   H")
-
-def RightRotate90(grid):
-    return [list(reversed(col)) for col in zip(*grid)]
-def LeftRotate90(grid):
-    return [list(row) for row in zip(*grid)][::-1]
-    
-def Rotate180(grid):
-    return  [row[::-1] for row in grid[::-1]]
 
 B = Board()
 B.printGrid()
