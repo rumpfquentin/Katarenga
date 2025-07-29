@@ -31,6 +31,7 @@ class Board:
             board[7][col]['piece'] = self.pieces['W'][col]
         self.boardlayout = board   
         self.legal_moves = []
+        self.camps = {'W' : None, 'B' : None}
 
     def create_pieces(self):
         for col in range(8):
@@ -38,47 +39,81 @@ class Board:
             self.pieces['B'].append(Piece('B', f'B{col}'))
 
     def movepiece(self, player):
-        piece_label = input('Enter the label of the piece you want to move: ')
-        coordinates = input('Enter the coordinates of where you want to move the piece e.g. E2: ')
-        
-        try:
+        while True:
+            piece_label = input('Enter the label of the piece you want to move (e.g. W0): ').strip()
+            coordinates = input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().upper()
+            camp = False
+
+            if coordinates == 'camp':
+                if player == 'W' and old_row == 0:
+                    self.legal_moves.append((piece_to_move, ('camp')))
+                    camp = True
+                if player =='B' and old_row == 7:
+                    self.legal_moves.append((piece_to_move, ('camp')))
+                    camp = True
+                move = 'camp'
+            else:
+                if len(coordinates) != 2 or not coordinates[0].isalpha() or not coordinates[1].isdigit():
+                    print("Invalid coordinate format.")
+                    continue
+
             col = ord(coordinates[0]) - ord('A')
-            row = 8 - int(coordinates[1])  
-        except (IndexError, ValueError):
-            print("Invalid input format.")
-            return
-        
-        piece_to_move = None
-        for r in range(8):
-            for c in range(8):
-                piece = self.boardlayout[r][c]['piece']
-                if piece and piece.label == piece_label:
-                    piece_to_move = piece
-                    old_row, old_col = r, c
+            row = 8 - int(coordinates[1])
+
+            if not (0 <= col <= 7 and 0 <= row <= 7):
+                print("Coordinates out of bounds.")
+                continue
+
+            piece_to_move = None
+            for r in range(8):
+                for c in range(8):
+                    piece = self.boardlayout[r][c]['piece']
+                    if piece and piece.label == piece_label:
+                        piece_to_move = piece
+                        old_row, old_col = r, c
+                        break
+                if piece_to_move:
                     break
-            if piece_to_move:
+            
+            if not piece_to_move:
+                print("No piece found with that label.")
+                continue
+
+            if piece_to_move.player != player:
+                print("That's not your piece.")
+                continue
+            if coordinates.lower() == 'camp':
+                if (player == 'W' and old_row == 0) or (player == 'B' and old_row == 7):
+                    self.camps[player] = piece_to_move
+                    self.boardlayout[old_row][old_col]['piece'] = None
+                    print(f"{piece_to_move.label} has entered the enemy camp!")
+                    break
+                else:
+                    print("You can only enter the camp from the enemy back row.")
+                    continue
+
+            self.get_legal_moves()
+
+            
+
+            if not camp:
+                move = (row, col)
+
+            if (piece_to_move.label, move) not in self.legal_moves:
+                print("That move is not legal.")
+                self.legal_moves = []
+                continue
+
+
+            self.boardlayout[old_row][old_col]['piece'] = None
+            if camp:
                 break
+            else:
+                self.boardlayout[row][col]['piece'] = piece_to_move
+            self.legal_moves = []
+            break
 
-        if not piece_to_move:
-            print('No piece found with that label')
-            return
-        
-        self.get_legal_moves()
-        islegal = False
-        move = (row, col)
-        for legal_move in self.legal_moves:
-            if legal_move[0] == piece_to_move.label and legal_move[1] == move:
-                islegal = True
-                break
 
-        if not islegal:
-            print('Not a legal move')
-            return
-        
-        self.legal_moves = []
-
-        self.boardlayout[old_row][old_col]['piece'] = None
-        self.boardlayout[row][col]['piece'] = piece_to_move
 
     def get_legal_moves(self):
         for r in range(len(self.boardlayout)):
@@ -200,6 +235,21 @@ class Board:
                     if piece.player != self.boardlayout[move[0]][move[1]]['piece'].player:
                         self.legal_moves.append((piece.label, (move)))
                 self.legal_moves.append((piece.label, (move)))
+        
+    def isOver(self):
+        b_pieces = []
+        w_pieces = []
+        for r in range (8):
+            for c in range(8):
+                piece =  self.boardlayout[r][c]['piece']
+                if piece:
+                    if piece.player == 'W':
+                        w_pieces.append(piece.label)
+                    elif piece.player == 'B':
+                        b_pieces.append(piece.label)
+        if len(b_pieces) < 2 or len(w_pieces)
+
+                
     
     def printGrid(self):
         print("    A   B   C   D   E   F   G   H")
@@ -224,7 +274,7 @@ def LeftRotate90(grid):
 def Rotate180(grid):
     return  [row[::-1] for row in grid[::-1]]
 
-    def randomlayout(self):
+def randomlayout(self):
         pass
         # y = []
         # with open('Tiles.txt') as f:
@@ -265,5 +315,7 @@ def Rotate180(grid):
 B = Board()
 B.printGrid()
 while True:
-    B.movepiece(input('Enter what player you are: ').upper())
+    B.movepiece('W')
+    B.printGrid()
+    B.movepiece('B')
     B.printGrid()
