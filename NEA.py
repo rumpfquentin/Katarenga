@@ -31,7 +31,7 @@ class Board:
             board[7][col]['piece'] = self.pieces['W'][col]
         self.boardlayout = board   
         self.legal_moves = []
-        self.camps = {'W' : None, 'B' : None}
+        self.camps = {'W' : [], 'B' : []}
 
     def create_pieces(self):
         for col in range(8):
@@ -84,7 +84,7 @@ class Board:
                 continue
             if coordinates.lower() == 'camp':
                 if (player == 'W' and old_row == 0) or (player == 'B' and old_row == 7):
-                    self.camps[player] = piece_to_move
+                    self.camps[player].append(piece_to_move)
                     self.boardlayout[old_row][old_col]['piece'] = None
                     print(f"{piece_to_move.label} has entered the enemy camp!")
                     break
@@ -176,51 +176,54 @@ class Board:
 
     def bishop_moves(self, row, col):
         piece = self.boardlayout[row][col]['piece']
+        
+        # Up-Right
         i = 1
-        for r in range(row-1, -1, -1):
-            if col-i < 0:
-                break
-            if self.boardlayout[r][col-i]['piece']:
-                if self.boardlayout[r][col-i]['piece'].player == piece.player:
+        while row - i >= 0 and col + i <= 7:
+            if self.boardlayout[row - i][col + i]['piece']:
+                if self.boardlayout[row - i][col + i]['piece'].player == piece.player:
                     break
-            self.legal_moves.append((piece.label, (r, col-i)))
-            if self.boardlayout[r][col-i]['colour'] == 'Y':
+            self.legal_moves.append((piece.label, (row - i, col + i)))
+            if self.boardlayout[row - i][col + i]['colour'] == 'Y':
                 break
-            i+=1
+            i += 1
+
+        # Down-Right
         i = 1
-        for r in range(row-1, -1, -1):
-            if col+i > 7:
-                break
-            if self.boardlayout[r][col+i]['piece']:
-                if self.boardlayout[r][col+i]['piece'].player == piece.player:
+        while row + i <= 7 and col + i <= 7:
+            if self.boardlayout[row + i][col + i]['piece']:
+                if self.boardlayout[row + i][col + i]['piece'].player == piece.player:
                     break
-            self.legal_moves.append((piece.label, (r, col+i)))
-            if self.boardlayout[r][col+i]['colour'] == 'Y':
+            self.legal_moves.append((piece.label, (row + i, col + i)))
+            if self.boardlayout[row + i][col + i]['colour'] == 'Y':
                 break
-            i+=1
+            i += 1
+
+        # Down-Left
         i = 1
-        for r in range(row+1, 8):
-            if col - r > 0:
-                break
-            if self.boardlayout[row][col-i]['piece']:
-                if self.boardlayout[row][col-i]['piece'].player == piece.player:
+        while row + i <= 7 and col - i >= 0:
+            if self.boardlayout[row + i][col - i]['piece']:
+                if self.boardlayout[row + i][col - i]['piece'].player == piece.player:
                     break
-            self.legal_moves.append((piece.label, (row, col-i)))
-            if self.boardlayout[row][col-i]['colour'] == 'Y':
+            self.legal_moves.append((piece.label, (row + i, col - i)))
+            if self.boardlayout[row + i][col - i]['colour'] == 'Y':
                 break
-            i+=1
-        i = 0
-        for r in range(row+1, 8):
-            if col+i >7:
-                break
-            if self.boardlayout[row][col+i]['piece']:
-                if self.boardlayout[row][col+i]['piece'].player == piece.player:
+            i += 1
+
+        # Up-Left
+        i = 1
+        while row - i >= 0 and col - i >= 0:
+            if self.boardlayout[row - i][col - i]['piece']:
+                if self.boardlayout[row - i][col - i]['piece'].player == piece.player:
                     break
-            self.legal_moves.append((piece.label, (row, col+i)))
-            if self.boardlayout[row][col+i]['colour'] == 'Y':
+            self.legal_moves.append((piece.label, (row - i, col - i)))
+            if self.boardlayout[row - i][col - i]['colour'] == 'Y':
                 break
-            i+=1
-            
+            i += 1
+
+                
+
+
     
             
 
@@ -247,7 +250,16 @@ class Board:
                         w_pieces.append(piece.label)
                     elif piece.player == 'B':
                         b_pieces.append(piece.label)
-        if len(b_pieces) < 2 or len(w_pieces)
+        if len(self.camps['W']) == 2:
+            print('White has won')
+            return True
+        elif len(self.camps['B']) == 2:
+            print('Black has won')
+            return True
+        if len(b_pieces) < 2 or len(w_pieces) <2:
+            print()
+            return True
+        
 
                 
     
@@ -317,5 +329,9 @@ B.printGrid()
 while True:
     B.movepiece('W')
     B.printGrid()
+    if B.isOver():
+        break
     B.movepiece('B')
     B.printGrid()
+    if B.isOver():
+        break
