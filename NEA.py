@@ -1,10 +1,22 @@
 import random
+from dataclasses import dataclass
+from typing import Optional, Union, Tuple
+
+
+
 
 class Piece:
     def __init__(self, player,label):
         self.player = player
         self.label = label
 
+@dataclass
+class MoveRecord:
+    piece : Piece
+    src : Tuple[int, int]
+    dest : tuple[int, int]
+    captured_piece : Optional[Piece] = None
+    was_camped: bool = False
 
 class Board:
 
@@ -51,7 +63,7 @@ class Board:
             self.pieces['W'].append(Piece('W',f'W{col}' ))
             self.pieces['B'].append(Piece('B', f'B{col}'))
 
-    def movepiece(self, player, piece_label, coordinates):
+    def apply_move(self, player, piece_label, coordinates):
         camp = False
 
         piece_to_move = None
@@ -69,47 +81,56 @@ class Board:
             camp = True
             move = ('camp')
         else:
-            if len(coordinates) != 2 or not coordinates[0].isalpha() or not coordinates[1].isdigit():
-                print("Invalid coordinate format.")
-                return False
-        if not camp:
-            col = ord(coordinates[0]) - ord('A')
-            row = 8 - int(coordinates[1])
-        
-        if not camp:
-            if not (0 <= col <= 7 and 0 <= row <= 7):
-                print("Coordinates out of bounds.")
-                return False
-
-        if not piece_to_move:
-            print("No piece found with that label.")
-            return False
-
-        if piece_to_move.player != player:
-            print("That's not your piece.")
-            return False
-        
-
-        self.legal_moves = self.get_legal_moves(player)
-
+            try:
+                col = ord(coordinates[0]) - ord('A')
+                row = 8 - int(coordinates[1])
+            except:
+                return False, 'Coordinates must be like E2 or camp', ''
             
-
-        if not camp:
+            if len(coordinates) != 2 or not coordinates[0].isalpha() or not coordinates[1].isdigit():
+                return False, 'Coordinates must be like E2 or camp', ''
+            
+            if not (0 <= col <= 7 and 0 <= row <= 7):
+                return False, 'Coordinates out of bounds', ''
+            
             move = (row, col)
 
-        if (piece_to_move.label, move) not in self.legal_moves:
-            print("That move is not legal.")
-            self.legal_moves = []
-            return False
+        if not piece_to_move:
+            return False, 'No piece found with that label', ''
+        
 
+        legal = self.get_legal_moves(player)
+
+
+        if (piece_to_move.label, move) not in legal:
+            return False, 'That move is not legal', ''
+        
+        captured_piece = None
+
+        if self.boardlayout[row][col]['piece']:
+            if self.boardlayout[row][col]['piece'].player != piece_to_move.player:
+                captured_piece = self.boardlayout[row][col]['piece']
+
+        record = MoveRecord(piece_to_move, (old_row, old_col), (row, col), captured_piece, camp)
 
         self.boardlayout[old_row][old_col]['piece'] = None
         if not camp:
             self.boardlayout[row][col]['piece'] = piece_to_move
         else:
             self.camps[player].append(piece_to_move)
-        self.legal_moves = []
-        return True
+        legal = []
+        return True, '', record
+
+    def undo_move(self, record):
+    
+        if record.was_camped:
+            self.camps[record.piece.player].remove(record.piece)    
+        else:
+            (row, col) = record.dest
+            self.boardlayout[row][col]['piece'] = record.captured_piece
+
+        (new_row, new_col) = record.src
+        self.boardlayout[new_row][new_col]['piece'] = record.piece
 
 
 
@@ -118,7 +139,7 @@ class Board:
         legal_moves = []
         for r in range(len(self.boardlayout)):
             for c in range(len(self.boardlayout[r])):
-                if self.boardlayout[r][c]['piece']:
+                if self.boardlayout[r][c]['piece'] and self.boardlayout[r][c]['piece'].player == player:
                     if self.boardlayout[r][c]['colour'] == 'R':
                         legal_moves.extend(self.rook_moves(r,c))   
                     elif self.boardlayout[r][c]['colour'] == 'B':
@@ -127,10 +148,10 @@ class Board:
                         legal_moves.extend(self.knight_moves(r,c))   
                     elif self.boardlayout[r][c]['colour'] == 'Y':
                         legal_moves.extend(self.bishop_moves(r,c))
-                if self.boardlayout[r][c]['piece'] and r == 0 and player == 'W':
-                    legal_moves.append((self.boardlayout[r][c]['piece'].label, ('camp')))   
-                if self.boardlayout[r][c]['piece'] and r == 7 and player == 'B':
-                    legal_moves.append((self.boardlayout[r][c]['piece'].label, ('camp')))  
+                    if r == 0 and player == 'W':
+                        legal_moves.append((self.boardlayout[r][c]['piece'].label, 'camp'))   
+                    elif r == 7 and player == 'B':
+                        legal_moves.append((self.boardlayout[r][c]['piece'].label, 'camp'))  
         return legal_moves
 
 
@@ -355,14 +376,20 @@ B.randomlayout()
 B.printGrid()
 while True:
     while True:
-        if B.movepiece('W',input('Enter the label of the piece you want to move (e.g. W0): ').strip(), input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().upper()):
-            break
+        ok, err, record = B.apply_move('W',input('Enter the label of the piece you want to move (e.g. W0): ').strip(), input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().upper())
+        if not ok:
+            print(err)
+            continue
+        break
     B.printGrid()
     if B.isOver():
         break
     while True:
-        if B.movepiece('B',input('Enter the label of the piece you want to move (e.g. B0): ').strip(), input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().upper()):
-            break
+        ok, err, record = B.apply_move('B',input('Enter the label of the piece you want to move (e.g. B0): ').strip(), input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().upper())
+        if not ok:
+            print(err)
+            continue
+        break
     B.printGrid()
     if B.isOver():
         break
