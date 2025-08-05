@@ -163,12 +163,18 @@ class Board:
             if self.boardlayout[row][c]['piece']:
                 if self.boardlayout[row][c]['piece'].player == self.boardlayout[row][col]['piece'].player:
                     break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
+                    break
             legal_moves.append((piece.label, (row, c)))
             if self.boardlayout[row][c]['colour'] == 'R':
                 break
         for c in range(col+1, 8):
             if self.boardlayout[row][c]['piece']:
                 if self.boardlayout[row][c]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
                     break
             legal_moves.append((piece.label, (row, c)))
             if self.boardlayout[row][c]['colour'] == 'R':
@@ -177,12 +183,18 @@ class Board:
             if self.boardlayout[r][col]['piece']:
                 if self.boardlayout[r][col]['piece'].player == self.boardlayout[row][col]['piece'].player:
                     break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
+                    break
             legal_moves.append((piece.label, (r, col)))
             if self.boardlayout[r][col]['colour'] == 'R':
                 break
         for r in range(row+1, 8):
             if self.boardlayout[r][col]['piece']:
                 if self.boardlayout[r][col]['piece'].player == self.boardlayout[row][col]['piece'].player:
+                    break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
                     break
             legal_moves.append((piece.label, (r, col)))
             if self.boardlayout[r][col]['colour'] == 'R':
@@ -215,6 +227,9 @@ class Board:
             if self.boardlayout[row - i][col + i]['piece']:
                 if self.boardlayout[row - i][col + i]['piece'].player == piece.player:
                     break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
+                    break
             legal_moves.append((piece.label, (row - i, col + i)))
             if self.boardlayout[row - i][col + i]['colour'] == 'Y':
                 break
@@ -225,6 +240,9 @@ class Board:
         while row + i <= 7 and col + i <= 7:
             if self.boardlayout[row + i][col + i]['piece']:
                 if self.boardlayout[row + i][col + i]['piece'].player == piece.player:
+                    break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
                     break
             legal_moves.append((piece.label, (row + i, col + i)))
             if self.boardlayout[row + i][col + i]['colour'] == 'Y':
@@ -237,6 +255,9 @@ class Board:
             if self.boardlayout[row + i][col - i]['piece']:
                 if self.boardlayout[row + i][col - i]['piece'].player == piece.player:
                     break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
+                    break
             legal_moves.append((piece.label, (row + i, col - i)))
             if self.boardlayout[row + i][col - i]['colour'] == 'Y':
                 break
@@ -247,6 +268,9 @@ class Board:
         while row - i >= 0 and col - i >= 0:
             if self.boardlayout[row - i][col - i]['piece']:
                 if self.boardlayout[row - i][col - i]['piece'].player == piece.player:
+                    break
+                else:
+                    legal_moves.append((piece.label, (row - i, col + i)))
                     break
             legal_moves.append((piece.label, (row - i, col - i)))
             if self.boardlayout[row - i][col - i]['colour'] == 'Y':
