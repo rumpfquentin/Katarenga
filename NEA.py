@@ -7,24 +7,37 @@ class Piece:
 
 
 class Board:
+
+
     def __init__(self):
         self.pieces = {'W': [], 'B': []}
         self.create_pieces()
-        self.colours = [
-        ['R', 'Y', 'G', 'B', 'R', 'Y', 'G', 'B'],
-        ['Y', 'R', 'B', 'G', 'Y', 'R', 'B', 'G'],
-        ['G', 'B', 'R', 'Y', 'G', 'B', 'R', 'Y'],
-        ['B', 'G', 'Y', 'R', 'B', 'G', 'Y', 'R'],
-        ['R', 'Y', 'G', 'B', 'R', 'Y', 'G', 'B'],
-        ['Y', 'R', 'B', 'G', 'Y', 'R', 'B', 'G'],
-        ['G', 'B', 'R', 'Y', 'G', 'B', 'R', 'Y'],
-        ['B', 'G', 'Y', 'R', 'B', 'G', 'Y', 'R'],
-    ]
+        self.colours = self.randomlayout()
+
+        print("    A   B   C   D   E   F   G   H")
+        print("  +---+---+---+---+---+---+---+---+")
+        for row_num, row in enumerate(self.colours):
+            row_str = f'{8-row_num} |'
+            for square in row:
+                row_str += f" {square} |"
+            print(row_str + f" {8 - row_num}")
+            print("  +---+---+---+---+---+---+---+---+")
+        print("    A   B   C   D   E   F   G   H")
+
+        blacksside = input('Enter the side you want to play on (top, bottom, left, right): ').lower()
+
+        if blacksside == 'bottom':
+            self.colours = Rotate180(self.colours)
+        elif blacksside == 'right':
+            self.colours = LeftRotate90(self.colours)
+        elif blacksside == 'left':
+            self.colours = RightRotate90(self.colours)
+
         board = []
         for rows in range(8):
             row = []
             for col in range(8):
-                row.append({'colour' : self.colours[rows][col], 'piece': None, 'LegalMoves': []})
+                row.append({'colour' : self.colours[rows][col], 'piece': None})
             board.append(row)
         for col in range(8):
             board[0][col]['piece'] = self.pieces['B'][col]
@@ -267,66 +280,77 @@ class Board:
         print("    A   B   C   D   E   F   G   H")
         print("  +---+---+---+---+---+---+---+---+")
         for row_num, row in enumerate(self.boardlayout):
-            row_str = f'{8-row_num}  |'
+            row_str = f'{8-row_num} |'
             for square in row:
                 if square['piece']:
                     piece = square['piece'].label
+                    row_str += f"{square['colour']}{piece}|"
                 else:
-                    piece = '  '
-                row_str += f"{square['colour']}{piece}|"
+                    row_str += f" {square['colour']} |"
+                
             print(row_str + f" {8 - row_num}")
             print("  +---+---+---+---+---+---+---+---+")
         print("    A   B   C   D   E   F   G   H")
 
+    def randomlayout(self):
+        with open('Tiles.txt') as f:
+            grids = f.readlines()
+            grids = [grid.strip('\n') for grid in grids]
+
+        x = []
+
+        for i in range(1, 8, 2):
+            x.append(random.randint(i-1,i))
+        grids_to_use = [grids[y] for y in x] 
+
+        for grid in grids_to_use:
+            move = random.randint(1,4)
+            if move == 1:
+                grid = RightRotate90(grid)
+            elif move == 2:
+                grid = LeftRotate90(grid)
+            elif move == 3:
+                grid = Rotate180(grid)
+            #if move is 4 then the grid isn't rotated so nothing happens
+
+        random.shuffle(grids_to_use)
+
+        chunked_grids = []
+        for grid in grids_to_use:
+            chunks = [grid[i:i+4] for i in range(0,15,4)]
+            chunked_grids.append(chunks)
+
+        final_grid = []
+
+        for i in range(8):
+            if i < 4:
+                final_grid.append(str(chunked_grids[0][i]) + str(chunked_grids[1][i]))
+            else:
+                final_grid.append(str(chunked_grids[2][i-4]) + str(chunked_grids[3][i-4]))
+
+        for i in range(8):
+            final_grid[i] = list(final_grid[i])
+
+        return final_grid
+    
+
+
+
 def RightRotate90(grid):
     return [list(reversed(col)) for col in zip(*grid)]
+
 def LeftRotate90(grid):
     return [list(row) for row in zip(*grid)][::-1]
     
 def Rotate180(grid):
     return  [row[::-1] for row in grid[::-1]]
 
-def randomlayout(self):
-        pass
-        # y = []
-        # with open('Tiles.txt') as f:
-        #     x = f.readlines()
-        #     x = [line.strip() for line in x]
-        #     x = [list(line) for line in x]
-        #     for i in range(1,5):
-        #         x.pop(random.randint(1,(8-i)))
-        #     print(x)
-        #     for i in range(4):
-        #         x[i] = [x[i][k:k+4] for k in range (0, len(x[i]), 4)]
-        #         for j in range(random.randint(1,4)):
-        #             if j == 1:
-        #                 x[i] = LeftRotate90(x[i])
-        #             elif j == 2:
-        #                 x[i] = RightRotate90(x[i])
-        #             elif j ==3:
-        #                 x[i] = Rotate180(x[i])
-        #             for item in x[i]:
-        #                 y.append(item)
-        # colours = []
-        # print(len(y))
-        # for i in range(4):
-        #     colours.append(y[i]+y[i+4]+y[i+8]+y[i+12])
-        # self.colours = x
-        # board = []
-
-        # for rows in range(8):
-        #     row = []
-        #     for col in range(8):
-        #         row.append({'colour' : self.colours[rows][col], 'piece': None})
-        #     board.append(row)
-        # for col in range(8):
-        #     board[0][col]['piece'] = f'B{col}'
-        #     board[7][col]['piece'] = f'W{col}'
-        # self.boardlayout = board      
 
 B = Board()
+B.randomlayout()
 B.printGrid()
 while True:
+
     B.movepiece('W')
     B.printGrid()
     if B.isOver():
