@@ -62,43 +62,33 @@ class Board:
             self.pieces['W'].append(Piece('W', f'W{col}'))
             self.pieces['B'].append(Piece('B', f'B{col}'))
 
-    def apply_move(self, player, piece_label, coordinates):
+    def apply_move(self, player, old_coors, coordinates):
         camp = False
-        piece_to_move = None
+        old_row, old_col = old_coors
+        piece_to_move = self.boardlayout[old_row][old_col]['piece']
+            
 
-        for r in range(8):
-            for c in range(8):
-                piece = self.boardlayout[r][c]['piece']
-                if piece and piece.label == piece_label:
-                    piece_to_move = piece
-                    old_row, old_col = r, c
-                    break
-            if piece_to_move:
-                break
 
-        if coordinates.lower() == 'camp':
+        if coordinates == 'camp':
             camp = True
             move = 'camp'
         else:
             try:
-                col = ord(coordinates[0].upper()) - ord('A')
-                row = 8 - int(coordinates[1])
+                row, col = coordinates
             except:
-                return False, 'Coordinates must be like E2 or camp', ''
+                if len(str(row)) != 1 or len(str(col)) != 1:
+                    return False, 'Coordinates must be like E2 or camp', ''
 
-            if len(coordinates) != 2 or not coordinates[0].isalpha() or not coordinates[1].isdigit():
-                return False, 'Coordinates must be like E2 or camp', ''
-
-            if not (0 <= col <= 7 and 0 <= row <= 7):
-                return False, 'Coordinates out of bounds', ''
+                elif not (0 <= col <= 7 and 0 <= row <= 7):
+                    return False, 'Coordinates out of bounds', ''
 
             move = (row, col)
 
         if not piece_to_move:
-            return False, 'No piece found with that label', ''
+            return False, 'No piece found at that position', ''
 
         legal = self.get_legal_moves(player)
-        if (piece_to_move.label, move) not in legal:
+        if (old_coors, move) not in legal:
             return False, 'That move is not legal', ''
 
         captured_piece = None
@@ -147,9 +137,9 @@ class Board:
                         legal_moves.extend(self.bishop_moves(r, c))
 
                     if r == 0 and player == 'W':
-                        legal_moves.append((piece.label, 'camp'))
+                        legal_moves.append(((r,c), 'camp'))
                     elif r == 7 and player == 'B':
-                        legal_moves.append((piece.label, 'camp'))
+                        legal_moves.append(((r,c), 'camp'))
         return legal_moves
 
     def rook_moves(self, row, col):
@@ -162,9 +152,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row, c)))
+                legal_moves.append(((row,col), (row, c)))
                 break
-            legal_moves.append((piece.label, (row, c)))
+            legal_moves.append(((row,col), (row, c)))
             if target['colour'] == 'R':
                 break
 
@@ -174,9 +164,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row, c)))
+                legal_moves.append(((row,col), (row, c)))
                 break
-            legal_moves.append((piece.label, (row, c)))
+            legal_moves.append(((row,col), (row, c)))
             if target['colour'] == 'R':
                 break
 
@@ -186,9 +176,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (r, col)))
+                legal_moves.append(((row,col), (r, col)))
                 break
-            legal_moves.append((piece.label, (r, col)))
+            legal_moves.append(((row,col), (r, col)))
             if target['colour'] == 'R':
                 break
 
@@ -198,9 +188,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (r, col)))
+                legal_moves.append(((row,col), (r, col)))
                 break
-            legal_moves.append((piece.label, (r, col)))
+            legal_moves.append(((row,col), (r, col)))
             if target['colour'] == 'R':
                 break
 
@@ -220,9 +210,9 @@ class Board:
             if 0 <= r <= 7 and 0 <= c <= 7:
                 target = self.boardlayout[r][c]['piece']
                 if target and target.player != piece.player:
-                    legal_moves.append((piece.label, (r, c)))
+                    legal_moves.append(((row,col), (r, c)))
                 elif not target:
-                    legal_moves.append((piece.label, (r, c)))
+                    legal_moves.append(((row,col), (r, c)))
 
         return legal_moves
 
@@ -237,9 +227,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row - i, col + i)))
+                legal_moves.append(((row,col), (row - i, col + i)))
                 break
-            legal_moves.append((piece.label, (row - i, col + i)))
+            legal_moves.append(((row,col), (row - i, col + i)))
             if target['colour'] == 'Y':
                 break
             i += 1
@@ -251,9 +241,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row + i, col + i)))
+                legal_moves.append(((row,col), (row + i, col + i)))
                 break
-            legal_moves.append((piece.label, (row + i, col + i)))
+            legal_moves.append(((row,col), (row + i, col + i)))
             if target['colour'] == 'Y':
                 break
             i += 1
@@ -265,9 +255,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row + i, col - i)))
+                legal_moves.append(((row,col), (row + i, col - i)))
                 break
-            legal_moves.append((piece.label, (row + i, col - i)))
+            legal_moves.append(((row,col), (row + i, col - i)))
             if target['colour'] == 'Y':
                 break
             i += 1
@@ -279,9 +269,9 @@ class Board:
             if target['piece']:
                 if target['piece'].player == piece.player:
                     break
-                legal_moves.append((piece.label, (row - i, col - i)))
+                legal_moves.append(((row,col), (row - i, col - i)))
                 break
-            legal_moves.append((piece.label, (row - i, col - i)))
+            legal_moves.append(((row,col), (row - i, col - i)))
             if target['colour'] == 'Y':
                 break
             i += 1
@@ -301,15 +291,16 @@ class Board:
             if 0 <= r <= 7 and 0 <= c <= 7:
                 target = self.boardlayout[r][c]['piece']
                 if target and target.player != piece.player:
-                    legal_moves.append((piece.label, (r, c)))
+                    legal_moves.append(((row,col), (r, c)))
                 elif not target:
-                    legal_moves.append((piece.label, (r, c)))
+                    legal_moves.append(((row,col), (r, c)))
 
         return legal_moves
 
     def isOver(self):
         b_pieces = []
         w_pieces = []
+        winner = False
         for r in range(8):
             for c in range(8):
                 piece = self.boardlayout[r][c]['piece']
@@ -320,17 +311,20 @@ class Board:
                         b_pieces.append(piece.label)
 
         if len(self.camps['W']) == 2:
-            print('White has won')
-            return True
+            winner = 'White has won'
+            return True, winner
         elif len(self.camps['B']) == 2:
-            print('Black has won')
-            return True
-        if len(b_pieces) < 2 or len(w_pieces) < 2:
-            return True
-        return False
+            winner = 'Black has won'
+            return True, winner
+        if len(b_pieces) < 2:
+            winner = 'Black has won'
+        elif len(w_pieces) < 2:
+            winner = 'Black has won'
+            return True, winner
+        return False, winner
 
     def printGrid(self):
-        print("    A   B   C   D   E   F   G   H")
+        print("    A   B   C   D   E   F   G   H ")
         print("  +---+---+---+---+---+---+---+---+")
         for row_num, row in enumerate(self.boardlayout):
             row_str = f'{8 - row_num} |'

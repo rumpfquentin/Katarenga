@@ -13,7 +13,7 @@ def evaluate(Board, player):
     if len(Board.camps[opponent]) >= 2 or count_pieces(Board, player) < 2:
         return -1_000_000
     
-    C = 1000 * (len(Board.camps[player]) - len(Board.camps[opponent]))
+    C = 10000 * (len(Board.camps[player]) - len(Board.camps[opponent]))
 
     D = two_best_distances(Board, player) - two_best_distances(Board, opponent)
 
@@ -31,13 +31,13 @@ def evaluate(Board, player):
 
     wD = 50
 
-    wM = 10
+    wM = 20
 
-    wP = 6
+    wP = 30
 
-    wT = 4
+    wT = 10
 
-    wS = 3
+    wS = 5
 
     wO = 3
 
@@ -51,7 +51,7 @@ def evaluate(Board, player):
             + wT * T
             + wS * S
             + wO * O
-            + wZ +Z)
+            + wZ * Z)
 
 def count_open_lines(Board, player):
     open_lines = 0
@@ -94,7 +94,7 @@ def count_open_lines(Board, player):
 
 def count_Threats(Board, player):
     threats = 0
-    for piece_label, dest in Board.get_legal_moves(player):
+    for src, dest in Board.get_legal_moves(player):
         if dest == 'camp':
             continue
         r, c = dest
@@ -106,19 +106,9 @@ def count_Threats(Board, player):
 
 
 def safe_pieces(Board, player):
-    count = 0
-
-    opponent = 'B' if player == 'W' else 'W'
-
-    legal_moves = Board.get_legal_moves(opponent)
-    for r in range(8):
-        for c in range(8):
-            if Board.boardlayout[r][c]['piece']:
-                if Board.boardlayout[r][c]['piece'].player == player:
-                    for move in legal_moves:
-                        if move[1] == (r,c):
-                            count+=1
-    return count
+    opponent = 'W' if player == 'B' else 'B'
+    unsafe = {m[1] for m in Board.get_legal_moves(opponent) if m[1]!="camp"}
+    return sum(1 for r in range(8) for c in range(8) if (p:=Board.boardlayout[r][c]['piece']) and p.player==player and (r,c) not in unsafe)
 
 def Zugzwang(Board, player):
     legal = Board.get_legal_moves(player)
@@ -161,24 +151,21 @@ def two_best_distances(Board, player):
                         count +=1
                     if count == 2:
                         return distances
+    return 16
                     
 def MiniMax(board, player,  depth, alpha, beta ):
     opponent = 'B' if player == 'W' else 'W'
-    if depth == 0 or board.isOver():
+    if depth == 0:
+        return evaluate(board, player)
+    over, winner = board.isOver()
+    if over:
         return evaluate(board, player)
     
     if player == 'W':
         maxEval = -INF
         for move in board.get_legal_moves(player):
-            piece_label, coords = move
-            if coords != 'camp':
-                row, col = coords
-                col = chr(col + ord('A'))
-                row = 8 - row
-                coordinates = col + str(row)
-            else: 
-                coordinates = 'camp'
-            ok, err, record = board.apply_move(player, piece_label, coordinates)
+            src, coords = move
+            ok, err, record = board.apply_move(player, src, coords)
             assert ok, err
             score = MiniMax(board, opponent, depth-1, alpha, beta)
             maxEval = max(maxEval, score)
@@ -190,15 +177,8 @@ def MiniMax(board, player,  depth, alpha, beta ):
     else:
         minEval = INF
         for move in board.get_legal_moves(player):
-            piece_label, coords = move
-            if coords != 'camp':
-                row, col = coords
-                col = chr(col + ord('A'))
-                row = 8 - row
-                coordinates = col + str(row)
-            else: 
-                coordinates = 'camp'
-            ok, err, record = board.apply_move(player, piece_label, coordinates)
+            src, coords = move
+            ok, err, record = board.apply_move(player, src, coords)
             assert ok, err
             score = MiniMax(board, opponent, depth-1, alpha, beta)
             minEval = min(minEval, score)
@@ -218,18 +198,11 @@ def find_best_move(board, player, depth):
         bestScore = INF
 
     for move in board.get_legal_moves(player):
-        piece_label, coords = move
-        if coords != 'camp':
-                row, col = coords
-                col = chr(col + ord('A'))
-                row = 8 - row
-                coordinates = col + str(row)
-        else: 
-            coordinates = 'camp'
-        ok, err, record = board.apply_move(player, piece_label, coordinates)
+        src, coords = move
+        ok, err, record = board.apply_move(player, src, coords)
         assert ok, err
 
-        score = MiniMax(board, player, depth -1, -INF, INF)
+        score = MiniMax(board, opponent, depth -1, -INF, INF)
 
         board.undo_move(record)
 
