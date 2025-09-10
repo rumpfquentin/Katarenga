@@ -3,6 +3,24 @@
     font_size: "40sp"
     background_color: 1,0,1,1
 
+<Cell@Button>:
+    background_color: 1,1,1,1
+
+<BoardView>
+    Label:
+        id: status_lbl
+        text: root.status
+    RecycleView:
+        id: rv
+        viewclass:  Cell
+        RecycleGridLayout:
+            cols: 8
+            default_size: (50,50)
+            size_hints: (None, None)
+            width: self.minimum_width
+            height: self.minimum_height
+
+
 BoxLayout:
     orientation: "vertical"
     padding: 16

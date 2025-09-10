@@ -5,7 +5,7 @@ import kivy
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.properties import (
-    NumericProperty, ReferenceListProperty, ObjectProperty
+    NumericProperty, ListProperty, ObjectProperty, StringProperty
 )
 from kivy.vector import Vector
 from kivy.clock import Clock
@@ -16,17 +16,6 @@ class Move:
     src: tuple
     dst: tuple | str
 
-class KatarengaApp(App):
-    title = 'Katarenga'
-
-    def build(self):
-        return self.root
-    
-    def start_game(self):
-        print('starting...')
-
-if __name__ == "__main__":
-    KatarengaApp().run()
 
 
 
@@ -40,13 +29,19 @@ class GameState:
         self.phase = ""
     
     def end_move(self):
+
         self.current_idx = (self.current_idx +1) % len(self.players)
         self.phase = "awaiting input"
 
+    def start_move(self):
+        pass
+
+    @property
     def current_player(self):
         return self.players[self.current_idx]
 
     def get_legal_moves(self):
+
         return self.board.get_legal_moves(self.current_player())
 
     def events_apply_move(self, move):
@@ -61,6 +56,29 @@ class GameState:
             events.append({"type": "error", "message": err})
         return events
 
+class BoardView(BoxLayout):
+    
+
+    status = StringProperty
+    gs = ObjectProperty(allownone = True)
+    highlights = ListProperty([])
+
+    def on_kv_post():
+        gs = GameState()
+        gs.start_move()
+    
+
+class KatarengaApp(App):
+    title = 'Katarenga'
+
+    def build(self):
+        return BoardView()
+    
+    def start_game(self):
+        print('starting...')
+
+if __name__ == "__main__":
+    KatarengaApp().run()
 
 
 
