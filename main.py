@@ -9,6 +9,7 @@ from kivy.properties import (
 )
 from kivy.vector import Vector
 from kivy.clock import Clock
+from kivy.uix.boxlayout import BoxLayout
 from dataclasses import dataclass
 
 @dataclass
@@ -42,7 +43,7 @@ class GameState:
 
     def get_legal_moves(self):
 
-        return self.board.get_legal_moves(self.current_player())
+        return self.board.get_legal_moves(self.current_player)
 
     def events_apply_move(self, move):
 
@@ -59,11 +60,11 @@ class GameState:
 class BoardView(BoxLayout):
     
 
-    status = StringProperty
+    status = StringProperty()
     gs = ObjectProperty(allownone = True)
     highlights = ListProperty([])
 
-    def on_kv_post():
+    def on_kv_post(self, base_widget):
         gs = GameState()
         gs.start_move()
     

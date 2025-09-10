@@ -1,22 +1,28 @@
 <Button>:
-    orientation: 'horzontal'
+    orientation: 'horizontal'
     font_size: "40sp"
     background_color: 1,0,1,1
 
 <Cell@Button>:
     background_color: 1,1,1,1
 
-<BoardView>
+<BoardView>:
+    id: board_view
+    orientation: 'vertical'
+    padding: 16
+    spacing:12
+
     Label:
         id: status_lbl
         text: root.status
+        size_hint_y: None
     RecycleView:
         id: rv
-        viewclass:  Cell
+        viewclass:  "Cell"
         RecycleGridLayout:
             cols: 8
             default_size: (50,50)
-            size_hints: (None, None)
+            default_size_hint: (None, None)
             width: self.minimum_width
             height: self.minimum_height
 
@@ -35,9 +41,11 @@ BoxLayout:
     AnchorLayout:
         anchor_x: "center"
         anchor_y: "top"
-        heigth: 80
+        height: 80
         Button:
             size_hint: None, None
             size: 250,100
             text: 'start'
             on_release: app.start_game()
+    BoardView:
+        id: board_view
