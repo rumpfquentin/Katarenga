@@ -2,63 +2,73 @@ from board import Board, Piece, MoveRecord
 import ai
 import kivy
 
-B = Board()
-B.randomlayout()
-B.printGrid()
-gamemode = input('multiplayer or singleplayer?: ').strip().lower()
-while True:
-    while True:
-        piece = input('Enter the coordinates of the piece you want to move: ').strip().lower()
-        move = input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().lower()
-        if move != 'camp':
-            col =   ord(move[0])  -ord('a')
-            row = 8 - int(move[1])
-            move = (row, col)
-        old_col =   ord(piece[0])  -ord('a')
-        old_row = 8 - int(piece[1])
-        piece_pos = (old_row, old_col)
-        ok, err, record = B.apply_move('W',piece_pos, move)
-        if not ok:
-            print(err)
-            continue
-        break
-    B.printGrid()
-    over, winner = B.isOver()
-    if over:
-        print(winner)
-        break
-    if gamemode == 'singleplayer':
-        print('AI is thinking')
-        ai_Move = ai.find_best_move(B, 'B', 3)
-        piece_label, coords = ai_Move
-        ok, err, record = B.apply_move('B', piece_label, coords)
-        assert ok, err
-        print(f'AI moved {piece_label} to {move}')
-        B.printGrid()
-        over, winner = B.isOver()
-        if over:
-            print(winner)
-            break
-    elif gamemode == 'multiplayer':
-        while True:
-            piece = input('Enter the coordinates of the piece you want to move: ').strip().lower()
-            move = input('Enter the coordinates of where you want to move the piece (e.g. E2): ').strip().lower()
-            if move != 'camp':
-                col =   ord(move[0])  -ord('a')
-                row = 8 - int(move[1])
-                move = (row, col)
-            old_col =   ord(piece[0])  -ord('a')
-            old_row = 8 - int(piece[1])
-            piece_pos = (old_row, old_col)
-            ok, err, record = B.apply_move('B',piece_pos, move)
-            if not ok:
-                print(err)
-                continue
-            break
-        B.printGrid()
-        over, winner = B.isOver()
-        if over:
-            print(winner)
-            break
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.properties import (
+    NumericProperty, ReferenceListProperty, ObjectProperty
+)
+from kivy.vector import Vector
+from kivy.clock import Clock
+from dataclasses import dataclass
 
+@dataclass
+class Move:
+    src: tuple
+    dst: tuple | str
+
+class KatarengaApp(App):
+    title = 'Katarenga'
+
+    def build(self):
+        return self.root
+    
+    def start_game(self):
+        print('starting...')
+
+if __name__ == "__main__":
+    KatarengaApp().run()
+
+
+
+class GameState:
+
+
+    def __init__(self):
+        self.players = ['human', 'ai']
+        self.board = Board()
+        self.current_idx = 0
+        self.phase = ""
+    
+    def end_move(self):
+        self.current_idx = (self.current_idx +1) % len(self.players)
+        self.phase = "awaiting input"
+
+    def current_player(self):
+        return self.players[self.current_idx]
+
+    def get_legal_moves(self):
+        return self.board.get_legal_moves(self.current_player())
+
+    def events_apply_move(self, move):
+
+        ok, err, record = self.board.apply_move(move)
+        events = []
+        if ok:
+            events.append({"type": 'move', "from": move.src, 'to': move.dst})
+            if record.captured_piece != None:
+                events.append({"type": 'capture', 'at': move.dst})
+        else:
+            events.append({"type": "error", "message": err})
+        return events
+
+
+
+
+        
+
+
+
+
+
+        
 
