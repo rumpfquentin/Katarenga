@@ -9,6 +9,9 @@ from kivy.uix.button import Button
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 
 from board import Board, Piece, MoveRecord
+
+b = Board()
+
 class Board_GUI: 
     def get_legal_moves(self, who): return []
     def apply_move(self, move): return True, None, type("R", (), {"captured_piece": None})()
@@ -24,12 +27,23 @@ class Cell(Button, RecycleDataViewBehavior):
         self.cell_text = ''
 
     def refresh_view_attrs(self, rv, index, data):
+        self._rv = rv
+
         self.cell_index = index
-        data['text'] = self.cell_text
+        self.cell_text = data.get('text', '')
+        self.cell_color = data.get('background_color', '')
+        self.cell_image_source = data.get('cell_image_source', 'chess_knight.jpg')
+        super().refresh_view_attrs(rv, index, data)
+        
 
     
     def on_release(self):
-        self.cell_text = '♟'
+        current_data_item = self._rv.data[self.cell_index]
+
+        updated_data_tem = current_data_item.copy()
+        updated_data_tem['text'] = 'pawn'
+        self._rv.data[self.cell_index] = updated_data_tem
+        self._rv.refresh_from_data()
 
     
 @dataclass
@@ -90,12 +104,22 @@ class BoardView(BoxLayout):
         cells = []
         for r in range(8):
             for c in range(8):
+                background_color = b.colours[r][c]
+                print(background_color)
+                if background_color == 'Y':
+                    cell_image_source = 'assets/Yellow_Square.png'
+                elif background_color == 'R':
+                    cell_image_source = 'assets/Red_Square.png'
+                elif background_color == 'G':
+                    cell_image_source = 'assets/Green_Square.png'
+                elif background_color == 'B':
+                    cell_image_source = 'assets/Blue_Square.png'
+                print(cell_image_source)
                 idx = r * 8 + c
                 cells.append({
                     "text": "",
                     "index": idx,
-                    "background_color": (0.85, 0.85, 0.85, 1)
-                        if (r + c) % 2 == 0 else (0.25, 0.25, 0.25, 1),
+                    "cell_image_source": cell_image_source,
                 })
         self.ids.rv.data = cells
 

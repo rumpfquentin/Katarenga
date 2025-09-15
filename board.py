@@ -23,7 +23,7 @@ class Board:
         self.pieces = {'W': [], 'B': []}
         self.create_pieces()
         self.colours = self.randomlayout()
-
+        print(self.colours)
         blacksside = 'bottom'
         if blacksside == 'bottom':
             self.colours = Rotate180(self.colours)

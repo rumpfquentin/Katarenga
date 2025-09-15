@@ -1,7 +1,11 @@
 #:kivy 2.3.0
 
 <Cell@Button>:
-    
+    canvas.before:
+        Rectangle:
+            size: self.size
+            pos: self.pos
+            source: root.cell_image_source
 
 <BoardView>:
     orientation: "vertical"
