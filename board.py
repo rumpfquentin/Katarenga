@@ -24,17 +24,7 @@ class Board:
         self.create_pieces()
         self.colours = self.randomlayout()
 
-        print("    A   B   C   D   E   F   G   H")
-        print("  +---+---+---+---+---+---+---+---+")
-        for row_num, row in enumerate(self.colours):
-            row_str = f'{8 - row_num} |'
-            for square in row:
-                row_str += f" {square} |"
-            print(row_str + f" {8 - row_num}")
-            print("  +---+---+---+---+---+---+---+---+")
-        print("    A   B   C   D   E   F   G   H")
-
-        blacksside = input('Enter the side you want to play on (top, bottom, left, right): ').lower()
+        blacksside = 'bottom'
         if blacksside == 'bottom':
             self.colours = Rotate180(self.colours)
         elif blacksside == 'right':
@@ -338,7 +328,8 @@ class Board:
             print("  +---+---+---+---+---+---+---+---+")
         print("    A   B   C   D   E   F   G   H")
 
-   
+    def save_grid():
+        pass
 
     def randomlayout(self):
         with open('Tiles.txt') as f:
