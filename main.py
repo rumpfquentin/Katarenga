@@ -8,6 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 
+
 from board import Board, Piece, MoveRecord
 
 b = Board()
@@ -16,36 +17,8 @@ class Board_GUI:
     def get_legal_moves(self, who): return []
     def apply_move(self, move): return True, None, type("R", (), {"captured_piece": None})()
 
-class Cell(Button, RecycleDataViewBehavior):
-    cell_index: NumericProperty
-    cell_color: ColorProperty
-    cell_image_source: StringProperty
-    cell_text: StringProperty
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.cell_text = ''
 
-    def refresh_view_attrs(self, rv, index, data):
-        self._rv = rv
-
-        self.cell_index = index
-        self.cell_text = data.get('text', '')
-        self.cell_color = data.get('background_color', '')
-        self.cell_image_source = data.get('cell_image_source', 'chess_knight.jpg')
-        super().refresh_view_attrs(rv, index, data)
-        
-
-    
-    def on_release(self):
-        current_data_item = self._rv.data[self.cell_index]
-
-        updated_data_tem = current_data_item.copy()
-        updated_data_tem['text'] = 'pawn'
-        self._rv.data[self.cell_index] = updated_data_tem
-        self._rv.refresh_from_data()
-
-    
 @dataclass
 class Move:
     src: tuple
@@ -105,7 +78,6 @@ class BoardView(BoxLayout):
         for r in range(8):
             for c in range(8):
                 background_color = b.colours[r][c]
-                print(background_color)
                 if background_color == 'Y':
                     cell_image_source = 'assets/Yellow_Square.png'
                 elif background_color == 'R':
@@ -114,7 +86,8 @@ class BoardView(BoxLayout):
                     cell_image_source = 'assets/Green_Square.png'
                 elif background_color == 'B':
                     cell_image_source = 'assets/Blue_Square.png'
-                print(cell_image_source)
+                else:
+                    cell_image_source = 'assets/Blue_Square.png'
                 idx = r * 8 + c
                 cells.append({
                     "text": "",
@@ -122,6 +95,37 @@ class BoardView(BoxLayout):
                     "cell_image_source": cell_image_source,
                 })
         self.ids.rv.data = cells
+
+class Cell(Button, RecycleDataViewBehavior):
+    cell_index:  NumericProperty
+    cell_color: ColorProperty
+    cell_image_source: StringProperty
+    cell_text: StringProperty
+
+    def __init__(self, **kwargs):
+        
+        super().__init__(**kwargs)
+
+
+
+    def refresh_view_attrs(self, rv, index, data):
+        self._rv = rv
+
+        self.cell_index = index
+        self.cell_text = data.get('text', '')
+        self.cell_color = data.get('background_color', '')
+        self.cell_image_source = data.get('cell_image_source', 'chess_knight.jpg')
+        super().refresh_view_attrs(rv, index, data)
+        
+
+    
+    def on_release(self):
+        current_data_item = self._rv.data[self.cell_index]
+
+        updated_data_tem = current_data_item.copy()
+        updated_data_tem['text'] = 'pawn'
+        self._rv.data[self.cell_index] = updated_data_tem
+        self._rv.refresh_from_data()
 
 class KatarengaApp(App):
     title = "Katarenga"

@@ -13,6 +13,7 @@
     spacing: dp(12)
 
     FloatLayout:
+
         RecycleView:
             id: rv
             viewclass: "Cell"
@@ -27,7 +28,7 @@
 
             RecycleGridLayout:
                 cols: 8
-                default_size: dp(56), dp(56)   # cell size → adjust as you like
+                default_size: dp(56), dp(56)  
                 default_size_hint: None, None
                 size_hint: None, None
                 width: self.minimum_width
