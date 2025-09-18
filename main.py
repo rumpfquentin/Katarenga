@@ -6,12 +6,12 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty, ObjectProperty, ListProperty, NumericProperty, ColorProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.graphics import Rectangle
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 
 
 from board import Board, Piece, MoveRecord
 
-b = Board()
 
 class Board_GUI: 
     def get_legal_moves(self, who): return []
@@ -24,7 +24,79 @@ class Move:
     src: tuple
     dst: Union[tuple, str]
 
+class Cell(Button, RecycleDataViewBehavior):
+    def __init__(self, **kwargs):
+        
+        super().__init__(**kwargs)
+        self._rect = None 
+        self.cell_image_source = 'assets/Blue_Square.png'
+        self.background_color = 0,0,0,0
+        self.white_piece_image_source = 'assets/white_pawn.png'
+        self.black_piece_image_source = 'assets/black_pawn.png'
+        self.piece_rect = None
+        self.bind(size = self.sync_pieces, pos = self.sync_pieces)
+
+    def refresh_view_attrs(self, rv, index, data):
+        ret = super().refresh_view_attrs(rv, index, data)
+        self._rv = rv
+
+        self.cell_index = index
+        self.cell_text = data.get('text', '')
+        self.cell_image_source = data.get('cell_image_source', 'assets/Blue_Square.png')
+        self.background_normal = self.cell_image_source
+        self.background_down = self.cell_image_source
+        self.background_disabled_normal = self.cell_image_source
+        self.background_disabled_down = self.cell_image_source
+        self.background_color = (1, 1, 1, 1)
+        self.border = (0, 0, 0, 0)
+
+        self.piece = data.get('piece')
+        Clock.create_trigger(lambda dt: self.update_piece(), -1)()
+        return ret
+    
+    def sync_pieces(self, *args):
+        if self.piece_rect:
+            self.piece_rect.pos = self.pos
+            self.piece_rect.size = self.size
+
+    def update_piece(self):
+        if self.piece is None:
+            if self.piece_rect:
+                self.canvas.after.remove(self.piece_rect)
+                self.piece_rect = None
+            return
+        if self.piece.player == 'B':
+            piece_image_source = self.black_piece_image_source
+        elif self.piece.player == "W":
+            piece_image_source = self.white_piece_image_source
+        if self.piece != None:
+            if not self.piece_rect: 
+                with self.canvas.after:
+                    self.piece_rect = Rectangle(
+                        size = self.size,
+                        pos = self.pos ,
+                        source = piece_image_source
+                        )
+            else:
+                self.piece_rect.source = piece_image_source
+                self.piece_rect.pos = self.pos
+                self.piece_rect.size = self.size
+
+
+
+    def on_release(self):
+        r, c = divmod(self.cell_index, 8)
+        parent = self.parent
+        while parent and not isinstance(parent, BoardView):
+            parent = parent.parent
+        if parent:
+            parent.on_cell_tap(r, c)
+    
+
 class GameState:
+
+    selected = ObjectProperty(allownone=True)
+
     def __init__(self):
         self.players = ['human', 'ai']
         self.board = Board()
@@ -64,9 +136,10 @@ class BoardView(BoxLayout):
     def on_kv_post(self, _):
         self.gs = GameState()
         self.gs.start_move()
+        self.b = self.gs.board
         self.status = f"Turn: {self.gs.current_player}"
-        self.refresh_board()
         Clock.schedule_once(self._tighten, 0)
+        self.refresh_board()
 
     def _tighten(self, *_):
         rv = self.ids.rv
@@ -77,7 +150,9 @@ class BoardView(BoxLayout):
         cells = []
         for r in range(8):
             for c in range(8):
-                background_color = b.colours[r][c]
+                background_color = self.b.colours[r][c]
+                piece =  self.b.boardlayout[r][c]["piece"]
+
                 if background_color == 'Y':
                     cell_image_source = 'assets/Yellow_Square.png'
                 elif background_color == 'R':
@@ -86,46 +161,42 @@ class BoardView(BoxLayout):
                     cell_image_source = 'assets/Green_Square.png'
                 elif background_color == 'B':
                     cell_image_source = 'assets/Blue_Square.png'
-                else:
-                    cell_image_source = 'assets/Blue_Square.png'
                 idx = r * 8 + c
                 cells.append({
                     "text": "",
                     "index": idx,
                     "cell_image_source": cell_image_source,
+                    "piece": piece
                 })
         self.ids.rv.data = cells
-
-class Cell(Button, RecycleDataViewBehavior):
-    cell_index:  NumericProperty
-    cell_color: ColorProperty
-    cell_image_source: StringProperty
-    cell_text: StringProperty
-
-    def __init__(self, **kwargs):
-        
-        super().__init__(**kwargs)
-
-
-
-    def refresh_view_attrs(self, rv, index, data):
-        self._rv = rv
-
-        self.cell_index = index
-        self.cell_text = data.get('text', '')
-        self.cell_color = data.get('background_color', '')
-        self.cell_image_source = data.get('cell_image_source', 'chess_knight.jpg')
-        super().refresh_view_attrs(rv, index, data)
-        
-
+        self.ids.rv.refresh_from_data()
     
-    def on_release(self):
-        current_data_item = self._rv.data[self.cell_index]
+    def on_cell_tap(self, r, c):
+        if self.current_player == 'human':
+            player_color = 'W'
+        elif self.current_player == 'human':
+            player_color = 'B'
+        if self.selected is None:
+            if self.is_own_piece():
+                self.selected = (r,c, player_color)
+                self.status = 'selected'
+            return 
+        
+        if (r,c) in self.b.get_legal_moves(player_color):
+            move = Move(src = self.selected, dst=(r,c))
+        
 
-        updated_data_tem = current_data_item.copy()
-        updated_data_tem['text'] = 'pawn'
-        self._rv.data[self.cell_index] = updated_data_tem
-        self._rv.refresh_from_data()
+    def is_own_piece(self, r, c, player_color):
+        if player_color == self.b.boardlayout[r][c]['piece'].player:
+            return True
+        else:
+            return False
+
+
+    def create_piece(self):
+        self.board
+
+
 
 class KatarengaApp(App):
     title = "Katarenga"

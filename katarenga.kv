@@ -1,11 +1,13 @@
 #:kivy 2.3.0
 
-<Cell@Button>:
-    canvas.before:
-        Rectangle:
-            size: self.size
-            pos: self.pos
-            source: root.cell_image_source
+<Cell>:
+    background_normal: ''
+    background_down: ''
+    background_disabled_normal: ''   
+    background_disabled_down: ''    
+    border: 0,0,0,0   
+
+
 
 <BoardView>:
     orientation: "vertical"
@@ -19,8 +21,6 @@
             viewclass: "Cell"
             data: []
             size_hint: None, None      
-            width: dp(448)
-            height: dp(448)
             do_scroll_x: False
             do_scroll_y: False
             bar_width: 0
