@@ -95,8 +95,6 @@ class Cell(Button, RecycleDataViewBehavior):
 
 class GameState:
 
-    selected = ObjectProperty(allownone=True)
-
     def __init__(self):
         self.players = ['human', 'ai']
         self.board = Board()
@@ -118,7 +116,11 @@ class GameState:
         return self.board.get_legal_moves(self.current_player)
 
     def events_apply_move(self, move):
-        ok, err, record = self.board.apply_move(move)
+        if self.current_player == 'human':
+            player_color = 'W'
+        elif self.current_player == 'ai':
+            player_color = 'B'
+        ok, err, record = self.board.apply_move(player_color, move.src, move.dst)
         events = []
         if ok:
             events.append({"type": 'move', "from": move.src, 'to': move.dst})
@@ -132,11 +134,11 @@ class BoardView(BoxLayout):
     status = StringProperty("")
     gs = ObjectProperty(allownone=True)
     highlights = ListProperty([])
+    selected = ObjectProperty(allownone = True)
 
     def on_kv_post(self, _):
         self.gs = GameState()
         self.gs.start_move()
-        self.b = self.gs.board
         self.status = f"Turn: {self.gs.current_player}"
         Clock.schedule_once(self._tighten, 0)
         self.refresh_board()
@@ -150,8 +152,8 @@ class BoardView(BoxLayout):
         cells = []
         for r in range(8):
             for c in range(8):
-                background_color = self.b.colours[r][c]
-                piece =  self.b.boardlayout[r][c]["piece"]
+                background_color = self.gs.board.colours[r][c]
+                piece =  self.gs.board.boardlayout[r][c]["piece"]
 
                 if background_color == 'Y':
                     cell_image_source = 'assets/Yellow_Square.png'
@@ -172,25 +174,37 @@ class BoardView(BoxLayout):
         self.ids.rv.refresh_from_data()
     
     def on_cell_tap(self, r, c):
-        if self.current_player == 'human':
+        if self.gs.current_player == 'human':
             player_color = 'W'
-        elif self.current_player == 'human':
+        elif self.gs.current_player == 'ai':
             player_color = 'B'
+
         if self.selected is None:
-            if self.is_own_piece():
-                self.selected = (r,c, player_color)
+            if self.is_own_piece(r,c, player_color):
+                self.selected = (r,c)
                 self.status = 'selected'
+                print(self.status)
             return 
         
-        if (r,c) in self.b.get_legal_moves(player_color):
+        if (self.selected,(r,c)) in self.gs.board.get_legal_moves(player_color):
             move = Move(src = self.selected, dst=(r,c))
+            print(move.dst)
+            events = self.gs.events_apply_move(move)
+            self.refresh_board()
+            self.gs.end_move()
+            return 
+        
+        if self.is_own_piece(r,c, player_color):
+            self.selected = (r,c)
+            return 
+        self.selected = None
         
 
     def is_own_piece(self, r, c, player_color):
-        if player_color == self.b.boardlayout[r][c]['piece'].player:
-            return True
-        else:
-            return False
+        if self.gs.board.boardlayout[r][c]['piece']:
+            if player_color == self.gs.board.boardlayout[r][c]['piece'].player:
+                return True
+        return False
 
 
     def create_piece(self):
