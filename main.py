@@ -8,14 +8,13 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.graphics import Rectangle
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
+from kivy.metrics import dp
+from kivy.uix.image import Image
 
 
 from board import Board, Piece, MoveRecord
+from ai import AI_Player
 
-
-class Board_GUI: 
-    def get_legal_moves(self, who): return []
-    def apply_move(self, move): return True, None, type("R", (), {"captured_piece": None})()
 
 
 
@@ -97,13 +96,23 @@ class GameState:
 
     def __init__(self):
         self.players = ['human', 'ai']
-        self.board = Board()
+        self.b = Board()
+        self.ai = AI_Player()
         self.current_idx = 0
         self.phase = ""
 
     def end_move(self):
         self.current_idx = (self.current_idx + 1) % len(self.players)
         self.phase = "awaiting input"
+
+        if self.current_player == 'ai':
+            return 'ai'
+
+    def ai_move(self):
+        move = self.ai.find_best_move(self.b, 'B', 3)
+        move = Move(src=move[0], dst= move[1]) 
+        return move
+
 
     def start_move(self):
         self.phase = "awaiting input"
@@ -112,15 +121,13 @@ class GameState:
     def current_player(self):
         return self.players[self.current_idx]
 
-    def get_legal_moves(self):
-        return self.board.get_legal_moves(self.current_player)
 
     def events_apply_move(self, move):
         if self.current_player == 'human':
             player_color = 'W'
         elif self.current_player == 'ai':
             player_color = 'B'
-        ok, err, record = self.board.apply_move(player_color, move.src, move.dst)
+        ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
         events = []
         if ok:
             events.append({"type": 'move', "from": move.src, 'to': move.dst})
@@ -152,8 +159,8 @@ class BoardView(BoxLayout):
         cells = []
         for r in range(8):
             for c in range(8):
-                background_color = self.gs.board.colours[r][c]
-                piece =  self.gs.board.boardlayout[r][c]["piece"]
+                background_color = self.gs.b.colours[r][c]
+                piece =  self.gs.b.boardlayout[r][c]["piece"]
 
                 if background_color == 'Y':
                     cell_image_source = 'assets/Yellow_Square.png'
@@ -172,26 +179,28 @@ class BoardView(BoxLayout):
                 })
         self.ids.rv.data = cells
         self.ids.rv.refresh_from_data()
-    
-    def on_cell_tap(self, r, c):
-        if self.gs.current_player == 'human':
-            player_color = 'W'
-        elif self.gs.current_player == 'ai':
-            player_color = 'B'
 
+    def on_ai_move(self,dt):
+        move = self.gs.ai_move()
+        self.gs.events_apply_move(move)
+        self.refresh_board()
+        self.gs.end_move()
+
+
+    def on_human_move(self, r,c, player_color):
+        
         if self.selected is None:
             if self.is_own_piece(r,c, player_color):
                 self.selected = (r,c)
                 self.status = 'selected'
-                print(self.status)
             return 
         
-        if (self.selected,(r,c)) in self.gs.board.get_legal_moves(player_color):
+        if (self.selected,(r,c)) in self.gs.b.get_legal_moves(player_color):
             move = Move(src = self.selected, dst=(r,c))
-            print(move.dst)
             events = self.gs.events_apply_move(move)
             self.refresh_board()
             self.gs.end_move()
+            Clock.schedule_once(self.on_ai_move, 0)
             return 
         
         if self.is_own_piece(r,c, player_color):
@@ -199,16 +208,22 @@ class BoardView(BoxLayout):
             return 
         self.selected = None
         
+        
+    def on_cell_tap(self, r, c):
+        if self.gs.current_player == 'human':
+            player_color = 'W'
+            self.on_human_move(r,c,player_color)
+        elif self.gs.current_player == 'ai':
+            print('ai is thinking')
+            return 
+
+        
 
     def is_own_piece(self, r, c, player_color):
-        if self.gs.board.boardlayout[r][c]['piece']:
-            if player_color == self.gs.board.boardlayout[r][c]['piece'].player:
+        if self.gs.b.boardlayout[r][c]['piece']:
+            if player_color == self.gs.b.boardlayout[r][c]['piece'].player:
                 return True
         return False
-
-
-    def create_piece(self):
-        self.board
 
 
 
@@ -218,9 +233,7 @@ class KatarengaApp(App):
         return Builder.load_file("katarenga.kv")
     def start_game(self, *args):
         print("starting...")
-    def place_piece():
-        BoardView.create_piece()
-        BoardView.refresh_board()
+
 
 if __name__ == "__main__":
     KatarengaApp().run()
