@@ -159,9 +159,9 @@ class BoardView(BoxLayout):
         cells = []
         for r in range(8):
             for c in range(8):
+
                 background_color = self.gs.b.colours[r][c]
                 piece =  self.gs.b.boardlayout[r][c]["piece"]
-
                 if background_color == 'Y':
                     cell_image_source = 'assets/Yellow_Square.png'
                 elif background_color == 'R':

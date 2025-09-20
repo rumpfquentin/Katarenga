@@ -360,6 +360,12 @@ class Board:
                 combined = grids[2][i-4] + grids[3][i-4]
             final_grid.append(combined)
 
+        if final_grid[0][0] == final_grid[7][7] or final_grid[0][7] == final_grid[7][0]:
+            return self.randomlayout()
+        for c in range(8):
+            if final_grid[0][c] == final_grid[7][c]:
+                return self.randomlayout()
+        
         return final_grid
 
 

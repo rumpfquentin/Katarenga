@@ -1,11 +1,11 @@
 from board import Board, Piece, MoveRecord
-
-INF = 10**12
+import math
+INF = math.inf
 ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
     def evaluate(self, Board, player):
-        
+
         opponent = 'B' if player == 'W' else 'W'
 
         if len(Board.camps[player])>= 2 or self.count_pieces(Board, opponent) < 2: 
@@ -187,7 +187,9 @@ class AI_Player:
                 if beta <= alpha:
                     break
             return minEval
-        
+
+
+
     def find_best_move(self,board, player, depth):
         best_Move = None
         opponent = 'B' if player =='W' else 'W'
