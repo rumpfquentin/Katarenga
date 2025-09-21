@@ -298,7 +298,6 @@ class Board:
                         w_pieces.append(piece.label)
                     elif piece.player == 'B':
                         b_pieces.append(piece.label)
-
         if len(self.camps['W']) == 2:
             winner = 'White has won'
             return True, winner
@@ -307,6 +306,7 @@ class Board:
             return True, winner
         if len(b_pieces) < 2:
             winner = 'Black has won'
+            return True, winner
         elif len(w_pieces) < 2:
             winner = 'Black has won'
             return True, winner

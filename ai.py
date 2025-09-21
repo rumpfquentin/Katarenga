@@ -33,7 +33,7 @@ class AI_Player:
 
         wM = 20
 
-        wP = 30
+        wP = 80
 
         wT = 10
 

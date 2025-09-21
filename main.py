@@ -10,6 +10,7 @@ from kivy.graphics import Rectangle
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.metrics import dp
 from kivy.uix.image import Image
+from kivy.core.window import Window
 
 
 from board import Board, Piece, MoveRecord
@@ -84,7 +85,7 @@ class Cell(Button, RecycleDataViewBehavior):
 
 
     def on_release(self):
-        r, c = divmod(self.cell_index, 8)
+        r, c = divmod(self.cell_index, 10)
         parent = self.parent
         while parent and not isinstance(parent, BoardView):
             parent = parent.parent
@@ -105,11 +106,15 @@ class GameState:
         self.current_idx = (self.current_idx + 1) % len(self.players)
         self.phase = "awaiting input"
 
+        Over, winner = self.b.isOver()
+        if Over:
+            print(winner)
+            Window.close()
         if self.current_player == 'ai':
             return 'ai'
 
     def ai_move(self):
-        move = self.ai.find_best_move(self.b, 'B', 3)
+        move = self.ai.find_best_move(self.b, 'B', 1)
         move = Move(src=move[0], dst= move[1]) 
         return move
 
@@ -157,19 +162,48 @@ class BoardView(BoxLayout):
 
     def refresh_board(self):
         cells = []
-        for r in range(8):
-            for c in range(8):
+        for r in range(10):
+            for c in range(10):
+                if r == 0 or c == 0 or r==9 or c ==9:
+                    if (r,c) == (0,0):
+                        cell_image_source = 'assets/camp.jpg'
+                        if len(self.gs.b.camps['W']) > 0:
+                            piece = self.gs.b.camps['W'][0]
+                        else:
+                            piece = None
+                    elif (r,c) == (0,9):
+                        cell_image_source = 'assets/camp.jpg'
+                        if len(self.gs.b.camps['W']) > 1:
+                            piece = self.gs.b.camps['W'][1]
+                        else:
+                            piece = None
+                    elif (r,c) == (9,0):
+                        cell_image_source = 'assets/camp.jpg'
+                        if len(self.gs.b.camps['B']) > 0:
+                            piece = self.gs.b.camps['B'][0]
+                        else:
+                            piece = None
+                    elif (r,c) == (9,9):
+                        cell_image_source = 'assets/camp.jpg'
+                        if len(self.gs.b.camps['B']) > 1:
+                            piece = self.gs.b.camps['B'][1]
+                        else:
+                            piece = None
 
-                background_color = self.gs.b.colours[r][c]
-                piece =  self.gs.b.boardlayout[r][c]["piece"]
-                if background_color == 'Y':
-                    cell_image_source = 'assets/Yellow_Square.png'
-                elif background_color == 'R':
-                    cell_image_source = 'assets/Red_Square.png'
-                elif background_color == 'G':
-                    cell_image_source = 'assets/Green_Square.png'
-                elif background_color == 'B':
-                    cell_image_source = 'assets/Blue_Square.png'
+                    else: 
+                        cell_image_source = 'assets/Black_Square.png'
+                        piece = None
+                else:  
+                    background_color = self.gs.b.colours[r-1][c-1]
+                    piece =  self.gs.b.boardlayout[r-1][c-1]["piece"]
+                    if background_color == 'Y':
+                        cell_image_source = 'assets/Yellow_Square.png'
+                    elif background_color == 'R':
+                        cell_image_source = 'assets/Red_Square.png'
+                    elif background_color == 'G':
+                        cell_image_source = 'assets/Green_Square.png'
+                    elif background_color == 'B':
+                        cell_image_source = 'assets/Blue_Square.png'
                 idx = r * 8 + c
                 cells.append({
                     "text": "",
@@ -188,23 +222,35 @@ class BoardView(BoxLayout):
 
 
     def on_human_move(self, r,c, player_color):
-        
+
+        if r in [0,9] or c in [0,9]:
+            if (r,c) in [(0,0), (0,9)]:
+                if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
+                    move = Move(src = self.selected, dst=('camp'))
+                    events = self.gs.events_apply_move(move)
+                    self.refresh_board()
+                    self.gs.end_move()
+                    Clock.schedule_once(self.on_ai_move, 0)
+                    return 
+            else: 
+                return 
+
         if self.selected is None:
-            if self.is_own_piece(r,c, player_color):
-                self.selected = (r,c)
+            if self.is_own_piece(r-1,c-1, player_color):
+                self.selected = (r-1,c-1)
                 self.status = 'selected'
             return 
         
-        if (self.selected,(r,c)) in self.gs.b.get_legal_moves(player_color):
-            move = Move(src = self.selected, dst=(r,c))
+        if (self.selected,(r-1,c-1)) in self.gs.b.get_legal_moves(player_color):
+            move = Move(src = self.selected, dst=(r-1,c-1))
             events = self.gs.events_apply_move(move)
             self.refresh_board()
             self.gs.end_move()
             Clock.schedule_once(self.on_ai_move, 0)
             return 
         
-        if self.is_own_piece(r,c, player_color):
-            self.selected = (r,c)
+        if self.is_own_piece(r-1,c-1, player_color):
+            self.selected = (r-1,c-1)
             return 
         self.selected = None
         
