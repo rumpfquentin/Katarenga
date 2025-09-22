@@ -8,11 +8,25 @@
     border: 0,0,0,0   
 
 <BoardView>:
+    name: 'Board'
     orientation: "vertical"
     padding: dp(16)
     spacing: dp(12)
-
     FloatLayout:
+        BoxLayout:
+            orientation: "vertical"
+            padding: dp(16)
+            spacing: dp(12)
+
+            size_hint: 1, 0.1
+            Button:
+                size_hint: None, None
+                size: dp(100), dp(40)
+                text: "Menu"
+                pos_hint: {"center_x":0.5, "center_y": 1}
+                on_release: 
+                    app.root.current = 'Menu'
+                    root.manager.transition.direction = 'down'
 
         RecycleView:
             id: rv
@@ -22,7 +36,7 @@
             do_scroll_x: False
             do_scroll_y: False
             bar_width: 0
-            pos_hint: {"center_x": .5, "center_y": 1}
+            pos_hint: {"center_x": .5, "center_y": 0.5}
 
             RecycleGridLayout:
                 cols: 10
@@ -32,18 +46,81 @@
                 width: self.minimum_width
                 height: self.minimum_height
                 spacing: dp(2)
-
-BoxLayout:
-    orientation: "vertical"
-    padding: dp(16)
-    spacing: dp(12)
-    FloatLayout:
-        size_hint: 1, 0.2
+<WinningScreen>:
+    name: "Win"
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        Label:
+            text: root.message
+            font_size: dp(70)
+            halign : "center"
+            valign: 'middle'
         Button:
             size_hint: None, None
-            size: dp(100), dp(40)
-            text: "Katarenga"
-            pos_hint: {"center_x":0.5, "center_y": .5}
-            on_release: app.start_game()
+            size: dp(70), dp(50)
+            text: 'Menu'
+            on_release:
+                app.root.current = 'Menu'
+                root.manager.transition_direction = 'down'
+
+
+
+<MenuScreen>:
+    name: 'Menu'
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        Label:
+            pos_hint: {"center_x": 0.5, "center_y": 0.7}
+            text: 'Katarenga'
+            font_size: 50
+        FloatLayout:
+            size_hint: 1,1
+            Button:
+                pos_hint: {"center_x": 0.5, "center_y": 1}
+                size_hint: None, None
+                text: "NEW GAME"
+                font_size: 32
+                size: dp(120), dp(50)
+                on_release: 
+                    app.new_game()
+                    app.root.current = 'Board'
+                    root.manager.transition.direction = 'up'
+            Button:
+                pos_hint: {"center_x": 0.5, "center_y": 0.8}
+                size_hint: None, None
+                text: "HARD"
+                font_size: 32
+                size: dp(120), dp(50)
+                on_release: 
+                    app.set_difficulty_hard()
+                    app.root.current = 'Board'
+                    root.manager.transition.direction = 'up'
+            Button:
+                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+                size_hint: None, None
+                text: "MEDIUM"
+                font_size: 32
+                size: dp(120), dp(50)
+                on_release: 
+                    app.set_difficulty_medium()
+                    app.root.current = 'Board'
+                    root.manager.transition.direction = 'up'
+            Button:
+                pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                size_hint: None, None
+                text: "EASY"
+                font_size: 32
+                size: dp(120), dp(50)
+                on_release: 
+                    app.set_difficulty_easy()
+                    app.root.current = 'Board'
+                    root.manager.transition.direction = 'up'
+            
+
+
+WindowManager:
+    MenuScreen:
     BoardView:
-        size_hint:1,1
+    WinningScreen:

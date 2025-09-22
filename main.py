@@ -11,7 +11,7 @@ from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.metrics import dp
 from kivy.uix.image import Image
 from kivy.core.window import Window
-
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
@@ -91,7 +91,16 @@ class Cell(Button, RecycleDataViewBehavior):
             parent = parent.parent
         if parent:
             parent.on_cell_tap(r, c)
-    
+
+class BoardScreen(Screen):
+    pass
+
+class MenuScreen(Screen):
+    pass  
+class WinningScreen(Screen):
+    message = StringProperty("")
+class WindowManager(ScreenManager):
+    pass
 
 class GameState:
 
@@ -101,6 +110,7 @@ class GameState:
         self.ai = AI_Player()
         self.current_idx = 0
         self.phase = ""
+        self.difficulty = 2
 
     def end_move(self):
         self.current_idx = (self.current_idx + 1) % len(self.players)
@@ -108,13 +118,14 @@ class GameState:
 
         Over, winner = self.b.isOver()
         if Over:
-            print(winner)
-            Window.close()
+            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))
+            
         if self.current_player == 'ai':
             return 'ai'
 
     def ai_move(self):
-        move = self.ai.find_best_move(self.b, 'B', 1)
+        print(self.difficulty)
+        move = self.ai.find_best_move(self.b, 'B', self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
         return move
 
@@ -142,7 +153,7 @@ class GameState:
             events.append({"type": "error", "message": err})
         return events
 
-class BoardView(BoxLayout):
+class BoardView(Screen):
     status = StringProperty("")
     gs = ObjectProperty(allownone=True)
     highlights = ListProperty([])
@@ -154,6 +165,21 @@ class BoardView(BoxLayout):
         self.status = f"Turn: {self.gs.current_player}"
         Clock.schedule_once(self._tighten, 0)
         self.refresh_board()
+
+    def new_game(self):
+        self.selected = None
+        difficulty = self.gs.difficulty
+        self.gs = None
+        self.gs = GameState()
+        self.gs.difficulty = difficulty
+        self.refresh_board()
+    
+    def teardown(self):
+        rv = self.ids.rv
+        rv.data = []
+        rv.refresh_from_data()
+
+
 
     def _tighten(self, *_):
         rv = self.ids.rv
@@ -204,7 +230,7 @@ class BoardView(BoxLayout):
                         cell_image_source = 'assets/Green_Square.png'
                     elif background_color == 'B':
                         cell_image_source = 'assets/Blue_Square.png'
-                idx = r * 8 + c
+                idx = r * 10 + c
                 cells.append({
                     "text": "",
                     "index": idx,
@@ -276,9 +302,38 @@ class BoardView(BoxLayout):
 class KatarengaApp(App):
     title = "Katarenga"
     def build(self):
+        Window.size = (800, 700)
         return Builder.load_file("katarenga.kv")
-    def start_game(self, *args):
-        print("starting...")
+    
+    def new_game(self):
+        sm = self.root
+        game = sm.get_screen("Board")
+        game.teardown()
+        game.new_game()
+        sm.current = "Board"
+
+    def game_won(self, winner_name):
+        sm = self.root
+        win = sm.get_screen("Win")
+        win.message = f"{winner_name} wins! 🎉"
+        sm.current = "Win"
+
+    def set_difficulty_hard(self):
+        sm = self.root
+        board = sm.get_screen("Board")
+        board.gs.difficulty = 3
+        print('changed difficulty')
+        
+    def set_difficulty_medium(self):
+        sm = self.root
+        board = sm.get_screen("Board")
+        board.gs.difficulty = 2
+
+    def set_difficulty_easy(self):
+
+        sm = self.root
+        board = sm.get_screen("Board")
+        board.gs.difficulty = 1
 
 
 if __name__ == "__main__":
