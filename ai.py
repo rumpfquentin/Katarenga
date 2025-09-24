@@ -1,21 +1,23 @@
 from board import Board, Piece, MoveRecord
+import time
 import math
 INF = math.inf
 ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
-    def evaluate(self, Board, player):
+
+    def evaluate(self, Board, player): 
 
         opponent = 'B' if player == 'W' else 'W'
 
         if len(Board.camps[player])>= 2 or self.count_pieces(Board, opponent) < 2: 
-            return  1_000_000
+            return  INF
         if len(Board.camps[opponent]) >= 2 or self.count_pieces(Board, player) < 2:
-            return -1_000_000
+            return -INF
         
-        C = 10000 * (len(Board.camps[player]) - len(Board.camps[opponent]))
+        C = 1000 * (len(Board.camps[player]) - len(Board.camps[opponent]))
 
-        D = self.two_best_distances(Board, player) - self.two_best_distances(Board, opponent)
+        D = self.two_best_distances(Board, opponent) - self.two_best_distances(Board, player)
 
         M = len(Board.get_legal_moves(player)) - len(Board.get_legal_moves(opponent))
 
@@ -29,20 +31,21 @@ class AI_Player:
 
         Z = self.Zugzwang(Board, player) - self.Zugzwang(Board, opponent)
 
+
+
         wD = 50
 
-        wM = 20
+        wM = 25
 
-        wP = 80
+        wP = 100
 
         wT = 10
 
-        wS = 5
+        wS = 20
 
         wO = 3
 
         wZ = 2
-
 
         return (C
                 + wD * D
@@ -103,8 +106,6 @@ class AI_Player:
                 threats += 1
         return threats               
 
-
-
     def safe_pieces(self,Board, player):
         opponent = 'W' if player == 'B' else 'B'
         unsafe = {m[1] for m in Board.get_legal_moves(opponent) if m[1]!="camp"}
@@ -153,21 +154,21 @@ class AI_Player:
                             return distances
         return 16
                         
-    def MiniMax(self, board, player,  depth, alpha, beta ):
-        opponent = 'B' if player == 'W' else 'W'
+    def MiniMax(self, board, player_to_move,  depth, alpha, beta, root ):
+        opponent = 'B' if player_to_move == 'W' else 'W'
         if depth == 0:
-            return self.evaluate(board, player)
+            return self.evaluate(board, root)
         over, winner = board.isOver()
         if over:
-            return self.evaluate(board, player)
+            return self.evaluate(board,root)
         
-        if player == 'W':
+        if player_to_move == root:
             maxEval = -INF
-            for move in board.get_legal_moves(player):
+            for move in board.get_legal_moves(player_to_move):
                 src, coords = move
-                ok, err, record = board.apply_move(player, src, coords)
+                ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
-                score = self.MiniMax(board, opponent, depth-1, alpha, beta)
+                score = self.MiniMax(board, opponent, depth-1, alpha, beta, root)
                 maxEval = max(maxEval, score)
                 alpha = max(alpha, score)
                 board.undo_move(record)
@@ -176,11 +177,11 @@ class AI_Player:
             return maxEval
         else:
             minEval = INF
-            for move in board.get_legal_moves(player):
+            for move in board.get_legal_moves(player_to_move):
                 src, coords = move
-                ok, err, record = board.apply_move(player, src, coords)
+                ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
-                score = self.MiniMax(board, opponent, depth-1, alpha, beta)
+                score = self.MiniMax(board, opponent, depth-1, alpha, beta, root)
                 minEval = min(minEval, score)
                 beta = min(beta, score)
                 board.undo_move(record)
@@ -191,31 +192,24 @@ class AI_Player:
 
 
     def find_best_move(self,board, player, depth):
-        best_Move = None
+        moves = board.get_legal_moves(player)
+        best_Move = moves[0]
         opponent = 'B' if player =='W' else 'W'
 
-        if player == 'W':
-            bestScore = -INF
-        else:
-            bestScore = INF
+        
+        best_score = -INF
 
-        for move in board.get_legal_moves(player):
+        for move in moves:
             src, coords = move
             ok, err, record = board.apply_move(player, src, coords)
             assert ok, err
 
-            score = self.MiniMax(board, opponent, depth -1, -INF, INF)
+            score = self.MiniMax(board, opponent, depth -1, -INF, INF, player)
 
             board.undo_move(record)
-
-            if player == 'W':
-                if score > bestScore:
-                    best_Move = move
-                    bestScore = score
-            elif player == 'B':
-                if score < bestScore:
-                    best_Move = move
-                    bestScore = score
+            if score > best_score:         
+                best_score = score
+                best_Move = (src, coords)
 
         return best_Move
 

@@ -305,7 +305,7 @@ class Board:
             winner = 'Black'
             return True, winner
         if len(b_pieces) < 2:
-            winner = 'Black'
+            winner = 'White'
             return True, winner
         elif len(w_pieces) < 2:
             winner = 'Black'

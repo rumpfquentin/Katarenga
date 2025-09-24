@@ -124,8 +124,7 @@ class GameState:
             return 'ai'
 
     def ai_move(self):
-        print(self.difficulty)
-        move = self.ai.find_best_move(self.b, 'B', self.difficulty)
+        move= self.ai.find_best_move(self.b, 'B', self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
         return move
 
@@ -315,14 +314,13 @@ class KatarengaApp(App):
     def game_won(self, winner_name):
         sm = self.root
         win = sm.get_screen("Win")
-        win.message = f"{winner_name} wins! 🎉"
+        win.message = f"{winner_name} wins!"
         sm.current = "Win"
 
     def set_difficulty_hard(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 3
-        print('changed difficulty')
         
     def set_difficulty_medium(self):
         sm = self.root
