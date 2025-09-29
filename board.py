@@ -304,10 +304,10 @@ class Board:
         elif len(self.camps['B']) == 2:
             winner = 'Black'
             return True, winner
-        if len(b_pieces) < 2:
+        if len(b_pieces) + len(self.camps['B']) < 2:
             winner = 'White'
             return True, winner
-        elif len(w_pieces) < 2:
+        elif len(w_pieces) + len(self.camps['W']) < 2:
             winner = 'Black'
             return True, winner
         return False, winner

@@ -7,8 +7,9 @@ BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
 
     def evaluate(self, Board, player): 
-
         opponent = 'B' if player == 'W' else 'W'
+        player_legal_moves = Board.get_legal_moves(player)
+        opponent_legal_moves = Board.get_legal_moves(opponent)
 
         if len(Board.camps[player])>= 2 or self.count_pieces(Board, opponent) < 2: 
             return  INF
@@ -19,13 +20,13 @@ class AI_Player:
 
         D = self.two_best_distances(Board, opponent) - self.two_best_distances(Board, player)
 
-        M = len(Board.get_legal_moves(player)) - len(Board.get_legal_moves(opponent))
+        M = len(player_legal_moves) - len(opponent_legal_moves)
 
         P = self.count_pieces(Board, player) - self.count_pieces(Board, opponent)
 
-        T = self.count_Threats(Board, player) - self.count_Threats(Board, opponent)
+        T = self.count_Threats(Board, player, opponent_legal_moves) - self.count_Threats(Board, opponent, player_legal_moves)
 
-        S = self.safe_pieces(Board, player) - self.safe_pieces(Board, opponent)
+        S = self.safe_pieces(Board, player, opponent_legal_moves) - self.safe_pieces(Board, opponent, player_legal_moves)
 
         O = self.count_open_lines(Board, player) - self.count_open_lines(Board, opponent)
 
@@ -95,9 +96,9 @@ class AI_Player:
 
 
 
-    def count_Threats(self,Board, player):
+    def count_Threats(self,Board, player, legal_moves):
         threats = 0
-        for src, dest in Board.get_legal_moves(player):
+        for src, dest in legal_moves:
             if dest == 'camp':
                 continue
             r, c = dest
@@ -106,9 +107,9 @@ class AI_Player:
                 threats += 1
         return threats               
 
-    def safe_pieces(self,Board, player):
+    def safe_pieces(self,Board, player, opponent_legal_moves):
         opponent = 'W' if player == 'B' else 'B'
-        unsafe = {m[1] for m in Board.get_legal_moves(opponent) if m[1]!="camp"}
+        unsafe = {m[1] for m in opponent_legal_moves if m[1]!="camp"}
         return sum(1 for r in range(8) for c in range(8) if (p:=Board.boardlayout[r][c]['piece']) and p.player==player and (r,c) not in unsafe)
 
     def Zugzwang(self,Board, player):

@@ -6,7 +6,7 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty, ObjectProperty, ListProperty, NumericProperty, ColorProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.graphics import Rectangle
+from kivy.graphics import Rectangle, Color
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.metrics import dp
 from kivy.uix.image import Image
@@ -15,7 +15,6 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
-
 
 
 
@@ -34,6 +33,8 @@ class Cell(Button, RecycleDataViewBehavior):
         self.white_piece_image_source = 'assets/white_pawn.png'
         self.black_piece_image_source = 'assets/black_pawn.png'
         self.piece_rect = None
+        self.high_rect = None
+        self.high_color = None
         self.bind(size = self.sync_pieces, pos = self.sync_pieces)
 
     def refresh_view_attrs(self, rv, index, data):
@@ -50,8 +51,11 @@ class Cell(Button, RecycleDataViewBehavior):
         self.background_color = (1, 1, 1, 1)
         self.border = (0, 0, 0, 0)
 
+        self.is_highlighted = data.get('highlighted')
+
         self.piece = data.get('piece')
         Clock.create_trigger(lambda dt: self.update_piece(), -1)()
+        Clock.create_trigger(lambda dt: self.update_highlights(), -1)()
         return ret
     
     def sync_pieces(self, *args):
@@ -82,7 +86,30 @@ class Cell(Button, RecycleDataViewBehavior):
                 self.piece_rect.pos = self.pos
                 self.piece_rect.size = self.size
 
-
+    def update_highlights(self):
+        if self.high_color:
+            try:
+                self.canvas.after.remove(self.high_color)
+            except:
+                pass
+            self.high_color = None
+            
+        if self.high_rect:
+            try:
+                self.canvas.after.remove(self.high_rect)
+            except:
+                pass
+            self.high_rect = None        
+    
+    
+        if self.is_highlighted:
+            if not self.high_rect:
+                with self.canvas.after:
+                        self.high_color = Color(0,1,0,0.5)
+                        self.high_rect = Rectangle(
+                            size=self.size,
+                            pos=self.pos
+                        )
 
     def on_release(self):
         r, c = divmod(self.cell_index, 10)
@@ -91,9 +118,6 @@ class Cell(Button, RecycleDataViewBehavior):
             parent = parent.parent
         if parent:
             parent.on_cell_tap(r, c)
-
-class BoardScreen(Screen):
-    pass
 
 class MenuScreen(Screen):
     pass  
@@ -111,22 +135,41 @@ class GameState:
         self.current_idx = 0
         self.phase = ""
         self.difficulty = 2
+        self.mode = '1vAI'
+        
+
 
     def end_move(self):
         self.current_idx = (self.current_idx + 1) % len(self.players)
         self.phase = "awaiting input"
-
         Over, winner = self.b.isOver()
         if Over:
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))
-            
-        if self.current_player == 'ai':
-            return 'ai'
+        if self.mode == '1vAI':
+            if self.current_player == 'ai':
+                Clock.schedule_once(self.ai_move, 0)
 
-    def ai_move(self):
+
+
+
+
+
+            
+
+    def two_player_mode(self):
+        self.mode = '1v1'
+        self.players = ['W', 'B']
+
+    def AI_mode(self):
+        self.mode = '1vAI'
+        self.players = ['human', 'ai']
+
+    def ai_move(self,dt):
         move= self.ai.find_best_move(self.b, 'B', self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
-        return move
+        ok, err, record = self.b.apply_move('B', move.src, move.dst)
+        App.get_running_app().root.get_screen('Board').refresh_board()
+        self.end_move()
 
 
     def start_move(self):
@@ -138,10 +181,14 @@ class GameState:
 
 
     def events_apply_move(self, move):
-        if self.current_player == 'human':
-            player_color = 'W'
-        elif self.current_player == 'ai':
-            player_color = 'B'
+        if self.mode == '1vAI':
+            if self.current_player == 'human':
+                player_color = 'W'
+            elif self.current_player == 'ai':
+                player_color = 'B'
+        else:
+            player_color = self.current_player
+    
         ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
         events = []
         if ok:
@@ -168,17 +215,20 @@ class BoardView(Screen):
     def new_game(self):
         self.selected = None
         difficulty = self.gs.difficulty
+        mode = self.gs.mode
+        players = self.gs.players
         self.gs = None
         self.gs = GameState()
         self.gs.difficulty = difficulty
+        self.gs.mode = mode
+        self.gs.players = players
+        self.highlights = []
         self.refresh_board()
     
     def teardown(self):
         rv = self.ids.rv
         rv.data = []
         rv.refresh_from_data()
-
-
 
     def _tighten(self, *_):
         rv = self.ids.rv
@@ -229,34 +279,40 @@ class BoardView(Screen):
                         cell_image_source = 'assets/Green_Square.png'
                     elif background_color == 'B':
                         cell_image_source = 'assets/Blue_Square.png'
+
+                is_highlighted = None
+                if (r-1, c-1) in self.highlights:
+                    is_highlighted = True
+
                 idx = r * 10 + c
                 cells.append({
                     "text": "",
                     "index": idx,
                     "cell_image_source": cell_image_source,
-                    "piece": piece
+                    "piece": piece,
+                    'highlighted': is_highlighted
                 })
         self.ids.rv.data = cells
         self.ids.rv.refresh_from_data()
 
-    def on_ai_move(self,dt):
-        move = self.gs.ai_move()
-        self.gs.events_apply_move(move)
-        self.refresh_board()
-        self.gs.end_move()
 
 
     def on_human_move(self, r,c, player_color):
 
         if r in [0,9] or c in [0,9]:
-            if (r,c) in [(0,0), (0,9)]:
+            if player_color == 'W' and (r,c) in [(0,0), (0,9)]:
                 if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
-                    self.refresh_board()
                     self.gs.end_move()
-                    Clock.schedule_once(self.on_ai_move, 0)
                     return 
+            elif player_color == 'B' and (r,c) in [(9,0), (9,9)]:
+                if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
+                    move = Move(src = self.selected, dst=('camp'))
+                    events = self.gs.events_apply_move(move)
+                    self.gs.end_move()
+                    return 
+
             else: 
                 return 
 
@@ -264,29 +320,48 @@ class BoardView(Screen):
             if self.is_own_piece(r-1,c-1, player_color):
                 self.selected = (r-1,c-1)
                 self.status = 'selected'
+                self.update_highlights(player_color)
             return 
         
         if (self.selected,(r-1,c-1)) in self.gs.b.get_legal_moves(player_color):
             move = Move(src = self.selected, dst=(r-1,c-1))
             events = self.gs.events_apply_move(move)
+            self.selected = None
+            self.update_highlights(player_color)
             self.refresh_board()
             self.gs.end_move()
-            Clock.schedule_once(self.on_ai_move, 0)
             return 
         
         if self.is_own_piece(r-1,c-1, player_color):
             self.selected = (r-1,c-1)
+            self.update_highlights(player_color)
             return 
-        self.selected = None
         
+        self.selected = None
+    
+    def update_highlights(self, player_color):
+
+        self.highlights = []
+
+        if not self.selected:
+            return 
+        
+        legal_moves = self.gs.b.get_legal_moves(player_color)
+        for src, dst in legal_moves:
+            if src == self.selected:
+                self.highlights.append(dst)
+        self.refresh_board()
         
     def on_cell_tap(self, r, c):
-        if self.gs.current_player == 'human':
-            player_color = 'W'
-            self.on_human_move(r,c,player_color)
-        elif self.gs.current_player == 'ai':
-            print('ai is thinking')
-            return 
+        if self.gs.mode == '1v1':
+            self.on_human_move(r,c,self.gs.current_player)
+        else:
+            if self.gs.current_player == 'human':
+                player_color = 'W'
+                self.on_human_move(r,c,player_color)
+            elif self.gs.current_player == 'ai':
+                print('ai is thinking')
+                return 
 
         
 
@@ -321,17 +396,25 @@ class KatarengaApp(App):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 3
+        board.gs.AI_mode()
         
     def set_difficulty_medium(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 2
+        board.gs.AI_mode()
 
     def set_difficulty_easy(self):
-
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 1
+        board.gs.AI_mode()
+    
+    def OneVsOne(self):
+        sm = self.root
+        board = sm.get_screen("Board")
+        board.gs.two_player_mode()
+    
 
 
 if __name__ == "__main__":

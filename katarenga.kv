@@ -12,6 +12,7 @@
     orientation: "vertical"
     padding: dp(16)
     spacing: dp(12)
+        
     FloatLayout:
         BoxLayout:
             orientation: "vertical"
@@ -77,32 +78,41 @@
             font_size: 50
         FloatLayout:
             size_hint: 1,1
-            Button:
-                pos_hint: {"center_x": 0.5, "center_y": 1}
-                size_hint: None, None
-                text: "NEW GAME"
-                font_size: 32
-                size: dp(120), dp(50)
-                on_release: 
-                    app.new_game()
-                    app.root.current = 'Board'
-                    root.manager.transition.direction = 'up'
+            FloatLayout:
+                size_hint: 0.5,1
+                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+                Button:
+                    pos_hint: {"center_x": 0.32, "center_y": 1}
+                    text: "NEW GAME"
+                    font_size: 32
+                    size_hint: 0.3,0.15
+                    on_release: 
+                        app.new_game()
+                        app.root.current = 'Board'
+                        root.manager.transition.direction = 'up'
+                Button:
+                    pos_hint: {"center_x": 0.68, "center_y": 1}
+                    text: "1 VS 1"
+                    font_size: 32
+                    size_hint: 0.3,0.15
+                    on_release: 
+                        app.OneVsOne()
+                        app.root.current = 'Board'
+                        root.manager.transition.direction = 'up'
             Button:
                 pos_hint: {"center_x": 0.5, "center_y": 0.8}
-                size_hint: None, None
+                size_hint: 0.15,0.13
                 text: "HARD"
                 font_size: 32
-                size: dp(120), dp(50)
                 on_release: 
                     app.set_difficulty_hard()
                     app.root.current = 'Board'
                     root.manager.transition.direction = 'up'
             Button:
                 pos_hint: {"center_x": 0.5, "center_y": 0.6}
-                size_hint: None, None
                 text: "MEDIUM"
                 font_size: 32
-                size: dp(120), dp(50)
+                size_hint: 0.15,0.13 
                 on_release: 
                     app.set_difficulty_medium()
                     app.root.current = 'Board'
@@ -112,7 +122,7 @@
                 size_hint: None, None
                 text: "EASY"
                 font_size: 32
-                size: dp(120), dp(50)
+                size_hint: 0.15,0.13 
                 on_release: 
                     app.set_difficulty_easy()
                     app.root.current = 'Board'
