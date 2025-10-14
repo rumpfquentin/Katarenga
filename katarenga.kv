@@ -21,6 +21,7 @@
 
             size_hint: 1, 0.1
             Button:
+                background_color: (0,0,0)
                 size_hint: None, None
                 size: dp(100), dp(40)
                 text: "Menu"
@@ -80,7 +81,7 @@
             size_hint: 1,1
             FloatLayout:
                 size_hint: 0.5,1
-                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+                pos_hint: {"center_x": 0.5, "center_y": 0.7}
                 Button:
                     pos_hint: {"center_x": 0.32, "center_y": 1}
                     text: "NEW GAME"
@@ -97,6 +98,25 @@
                     size_hint: 0.3,0.15
                     on_release: 
                         app.OneVsOne()
+                        app.root.current = 'Board'
+                        root.manager.transition.direction = 'up'
+            FloatLayout:
+                size_hint: 0.5,1
+                pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                Button:
+                    pos_hint: {"center_x": 0.32, "center_y": 1}
+                    text: "Save Game"
+                    font_size: 32
+                    size_hint: 0.3,0.15
+                    on_release: 
+                        app.save_game()
+                Button:
+                    pos_hint: {"center_x": 0.68, "center_y": 1}
+                    text: "Load Game"
+                    font_size: 32
+                    size_hint: 0.3,0.15
+                    on_release: 
+                        app.load_game()
                         app.root.current = 'Board'
                         root.manager.transition.direction = 'up'
             Button:

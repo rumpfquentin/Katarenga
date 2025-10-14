@@ -6,7 +6,7 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty, ObjectProperty, ListProperty, NumericProperty, ColorProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.graphics import Rectangle, Color
+from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.metrics import dp
 from kivy.uix.image import Image
@@ -15,8 +15,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
-
-
+import copy
+import json
 
 @dataclass
 class Move:
@@ -28,7 +28,7 @@ class Cell(Button, RecycleDataViewBehavior):
         
         super().__init__(**kwargs)
         self._rect = None 
-        self.cell_image_source = 'assets/Blue_Square.png'
+        self.cell_image_source = 'assets/Brown_Square.png'
         self.background_color = 0,0,0,0
         self.white_piece_image_source = 'assets/white_pawn.png'
         self.black_piece_image_source = 'assets/black_pawn.png'
@@ -105,11 +105,8 @@ class Cell(Button, RecycleDataViewBehavior):
         if self.is_highlighted:
             if not self.high_rect:
                 with self.canvas.after:
-                        self.high_color = Color(0,1,0,0.5)
-                        self.high_rect = Rectangle(
-                            size=self.size,
-                            pos=self.pos
-                        )
+                        self.high_color = Color(1,1,1)
+                        self.high_rect = Line(rectangle = (self.x, self.y, dp(56), dp(56)), width = dp(2))
 
     def on_release(self):
         r, c = divmod(self.cell_index, 10)
@@ -152,9 +149,35 @@ class GameState:
 
 
 
+    def save_grid(self):
+        grid = copy.deepcopy(self.b.boardlayout)
+        for row in grid:
+            for square in row:
+                square['piece'] = str(square['piece'])
+        data = {
+                "to_move": ['W', 'B'][self.current_idx],
+                "camps": self.b.camps,
+                "grid": grid
+            }
 
+        with open('SaveGame.json', 'w') as f:
+            json.dump(data, f)
 
-            
+    def load_grid(self):
+        with open('Savegame.json', 'r') as f:
+            loaded = json.load(f)
+        self.b.camps = loaded['camps']
+        self.current_idx = ['W', 'B'].index(loaded['to_move'])
+        board = loaded['grid']
+        for row in board:
+            for square in row:
+                if square['piece'] == 'None':
+                    square['piece'] = None
+                else: 
+                    colour, label = square['piece'][0], square['piece'][1:3]
+                    square['piece'] = Piece(colour, label)
+        return board
+
 
     def two_player_mode(self):
         self.mode = '1v1'
@@ -233,40 +256,41 @@ class BoardView(Screen):
     def _tighten(self, *_):
         rv = self.ids.rv
         lm = rv.layout_manager
-        rv.size = (lm.minimum_width, lm.minimum_height)
+        rv.size = (lm.minimum_width+dp(4), lm.minimum_height+dp(4))
 
     def refresh_board(self):
         cells = []
         for r in range(10):
             for c in range(10):
+                is_highlighted = None
                 if r == 0 or c == 0 or r==9 or c ==9:
                     if (r,c) == (0,0):
-                        cell_image_source = 'assets/camp.jpg'
+                        cell_image_source = 'assets/camp.png'
                         if len(self.gs.b.camps['W']) > 0:
                             piece = self.gs.b.camps['W'][0]
                         else:
                             piece = None
                     elif (r,c) == (0,9):
-                        cell_image_source = 'assets/camp.jpg'
+                        cell_image_source = 'assets/camp.png'
                         if len(self.gs.b.camps['W']) > 1:
                             piece = self.gs.b.camps['W'][1]
                         else:
                             piece = None
                     elif (r,c) == (9,0):
-                        cell_image_source = 'assets/camp.jpg'
+                        cell_image_source = 'assets/camp.png'
                         if len(self.gs.b.camps['B']) > 0:
                             piece = self.gs.b.camps['B'][0]
                         else:
                             piece = None
                     elif (r,c) == (9,9):
-                        cell_image_source = 'assets/camp.jpg'
+                        cell_image_source = 'assets/camp.png'
                         if len(self.gs.b.camps['B']) > 1:
                             piece = self.gs.b.camps['B'][1]
                         else:
                             piece = None
 
                     else: 
-                        cell_image_source = 'assets/Black_Square.png'
+                        cell_image_source = 'assets/Brown_Square.png'
                         piece = None
                 else:  
                     background_color = self.gs.b.colours[r-1][c-1]
@@ -279,9 +303,14 @@ class BoardView(Screen):
                         cell_image_source = 'assets/Green_Square.png'
                     elif background_color == 'B':
                         cell_image_source = 'assets/Blue_Square.png'
-
-                is_highlighted = None
-                if (r-1, c-1) in self.highlights:
+                is_highlighted = False
+                if (r,c) in [(0,0), (0,9)]:
+                    if ('campsW') in self.highlights:
+                        is_highlighted = True
+                elif (r,c) in [(9,0), (9,9)]:
+                    if ('campsB') in self.highlights:
+                        is_highlighted = True 
+                elif (r-1, c-1) in self.highlights:
                     is_highlighted = True
 
                 idx = r * 10 + c
@@ -304,12 +333,14 @@ class BoardView(Screen):
                 if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
+                    self.refresh_board()
                     self.gs.end_move()
                     return 
             elif player_color == 'B' and (r,c) in [(9,0), (9,9)]:
                 if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
+                    self.refresh_board()
                     self.gs.end_move()
                     return 
 
@@ -321,6 +352,7 @@ class BoardView(Screen):
                 self.selected = (r-1,c-1)
                 self.status = 'selected'
                 self.update_highlights(player_color)
+            self.update_highlights(player_color)
             return 
         
         if (self.selected,(r-1,c-1)) in self.gs.b.get_legal_moves(player_color):
@@ -338,18 +370,30 @@ class BoardView(Screen):
             return 
         
         self.selected = None
+        self.update_highlights(player_color)
+        self.refresh_board()
+        return
     
     def update_highlights(self, player_color):
 
         self.highlights = []
 
         if not self.selected:
+            self.refresh_board()
             return 
         
         legal_moves = self.gs.b.get_legal_moves(player_color)
         for src, dst in legal_moves:
             if src == self.selected:
-                self.highlights.append(dst)
+                if dst == 'camp':
+                    if player_color == 'W':
+                        camps = ('campsW')
+                        self.highlights.append(camps)
+                    elif player_color == 'B':
+                        camps = ('campsB')
+                        self.highlights.append(camps)
+                else:
+                    self.highlights.append(dst)
         self.refresh_board()
         
     def on_cell_tap(self, r, c):
@@ -360,7 +404,6 @@ class BoardView(Screen):
                 player_color = 'W'
                 self.on_human_move(r,c,player_color)
             elif self.gs.current_player == 'ai':
-                print('ai is thinking')
                 return 
 
         
@@ -374,6 +417,8 @@ class BoardView(Screen):
 
 
 class KatarengaApp(App):
+
+
     title = "Katarenga"
     def build(self):
         Window.size = (800, 700)
@@ -395,7 +440,7 @@ class KatarengaApp(App):
     def set_difficulty_hard(self):
         sm = self.root
         board = sm.get_screen("Board")
-        board.gs.difficulty = 3
+        board.gs.difficulty = 3j
         board.gs.AI_mode()
         
     def set_difficulty_medium(self):
@@ -414,6 +459,19 @@ class KatarengaApp(App):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.two_player_mode()
+
+    def save_game(self):
+        sm = self.root
+        board = sm.get_screen("Board")
+        board.gs.save_grid()
+
+    def load_game(self):
+        sm = self.root
+        board = sm.get_screen("Board")
+        grid = board.gs.load_grid()
+        board.refresh_board()
+        board.gs.b.boardlayout = grid
+        board.refresh_board()
     
 
 

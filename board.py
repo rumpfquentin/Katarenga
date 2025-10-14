@@ -1,12 +1,15 @@
 import random
 from dataclasses import dataclass
 from typing import Optional, Tuple
-
-
+import json
+import copy
 class Piece:
     def __init__(self, player, label):
         self.player = player
         self.label = label
+    def __str__(self):
+        string = f'{self.player}{self.label}'
+        return string
 
 
 @dataclass
@@ -312,23 +315,7 @@ class Board:
             return True, winner
         return False, winner
 
-    def printGrid(self):
-        print("    A   B   C   D   E   F   G   H ")
-        print("  +---+---+---+---+---+---+---+---+")
-        for row_num, row in enumerate(self.boardlayout):
-            row_str = f'{8 - row_num} |'
-            for square in row:
-                if square['piece']:
-                    piece = square['piece'].label
-                    row_str += f"{square['colour']}{piece}|"
-                else:
-                    row_str += f" {square['colour']} |"
-            print(row_str + f" {8 - row_num}")
-            print("  +---+---+---+---+---+---+---+---+")
-        print("    A   B   C   D   E   F   G   H")
 
-    def save_grid():
-        pass
 
     def randomlayout(self):
         with open('Tiles.txt') as f:

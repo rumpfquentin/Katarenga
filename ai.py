@@ -1,11 +1,12 @@
 from board import Board, Piece, MoveRecord
 import time
 import math
+import random
 INF = math.inf
 ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
-
+    
     def evaluate(self, Board, player): 
         opponent = 'B' if player == 'W' else 'W'
         player_legal_moves = Board.get_legal_moves(player)
