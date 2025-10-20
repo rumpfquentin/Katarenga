@@ -169,14 +169,21 @@ class GameState:
         self.b.camps = loaded['camps']
         self.current_idx = ['W', 'B'].index(loaded['to_move'])
         board = loaded['grid']
+        colours = []
         for row in board:
+            row_colours = []
             for square in row:
                 if square['piece'] == 'None':
                     square['piece'] = None
                 else: 
                     colour, label = square['piece'][0], square['piece'][1:3]
                     square['piece'] = Piece(colour, label)
+                row_colours.append(square['colour'])
+            colours.append(row_colours)
+        self.b.colours = colours
+                
         return board
+        
 
 
     def two_player_mode(self):
@@ -440,7 +447,7 @@ class KatarengaApp(App):
     def set_difficulty_hard(self):
         sm = self.root
         board = sm.get_screen("Board")
-        board.gs.difficulty = 3j
+        board.gs.difficulty = 3
         board.gs.AI_mode()
         
     def set_difficulty_medium(self):

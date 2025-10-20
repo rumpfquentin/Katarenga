@@ -6,32 +6,40 @@ INF = math.inf
 ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
-    
-    def evaluate(self, Board, player): 
-        opponent = 'B' if player == 'W' else 'W'
-        player_legal_moves = Board.get_legal_moves(player)
-        opponent_legal_moves = Board.get_legal_moves(opponent)
 
-        if len(Board.camps[player])>= 2 or self.count_pieces(Board, opponent) < 2: 
+    def evaluate(self, Board, root_player, current_player_moves, current_opponent_moves, current_player): 
+        opponent = 'B' if root_player == 'W' else 'W'
+
+        if root_player == current_player:
+            player_legal_moves = current_player_moves
+            opponent_legal_moves = current_opponent_moves
+        else:
+            player_legal_moves = current_opponent_moves
+            opponent_legal_moves = current_player_moves
+
+        open_lines_player, count_pieces_player, two_best_distances_player = self.Board_Iterations(Board, root_player) 
+        open_lines_opponent, count_pieces_opponent, two_best_distances_opponent = self.Board_Iterations(Board, opponent) 
+
+        if len(Board.camps[root_player])>= 2 or (count_pieces_opponent) + len(Board.camps[opponent])  < 2: 
             return  INF
-        if len(Board.camps[opponent]) >= 2 or self.count_pieces(Board, player) < 2:
+        if len(Board.camps[opponent]) >= 2 or (count_pieces_player) + len(Board.camps[root_player]) < 2:
             return -INF
         
-        C = 1000 * (len(Board.camps[player]) - len(Board.camps[opponent]))
 
-        D = self.two_best_distances(Board, opponent) - self.two_best_distances(Board, player)
+        C = 1000 * (len(Board.camps[root_player]) - len(Board.camps[opponent]))
+
+        D = two_best_distances_opponent - two_best_distances_player
 
         M = len(player_legal_moves) - len(opponent_legal_moves)
 
-        P = self.count_pieces(Board, player) - self.count_pieces(Board, opponent)
+        P = count_pieces_player - count_pieces_opponent
 
-        T = self.count_Threats(Board, player, opponent_legal_moves) - self.count_Threats(Board, opponent, player_legal_moves)
+        T = self.count_Threats(Board, root_player, opponent_legal_moves) - self.count_Threats(Board, opponent, player_legal_moves)
 
-        S = self.safe_pieces(Board, player, opponent_legal_moves) - self.safe_pieces(Board, opponent, player_legal_moves)
+        S = self.safe_pieces(Board, root_player, opponent_legal_moves) - self.safe_pieces(Board, opponent, player_legal_moves)
 
-        O = self.count_open_lines(Board, player) - self.count_open_lines(Board, opponent)
+        O = open_lines_player - open_lines_opponent
 
-        Z = self.Zugzwang(Board, player) - self.Zugzwang(Board, opponent)
 
 
 
@@ -39,15 +47,14 @@ class AI_Player:
 
         wM = 25
 
-        wP = 100
+        wP = 120
 
         wT = 10
 
-        wS = 20
+        wS = 200
 
-        wO = 3
+        wO = 30
 
-        wZ = 2
 
         return (C
                 + wD * D
@@ -55,17 +62,23 @@ class AI_Player:
                 + wP * P
                 + wT * T
                 + wS * S
-                + wO * O
-                + wZ * Z)
+                + wO * O)
 
-    def count_open_lines(self, Board, player):
+
+    def Board_Iterations(self, Board, player):
         open_lines = 0
-
+        count = 0
+        distances = []
         for r in range(8):
             for c in range(8):
                 piece = Board.boardlayout[r][c]['piece']
                 if  piece is None or piece.player != player:
                     continue
+                count +=1
+                if player == 'W':
+                    distances.append(r)
+                else:
+                    distances.append(7-r)
 
                 colour = Board.boardlayout[r][c]['colour']
                 if colour == 'R':
@@ -92,8 +105,14 @@ class AI_Player:
                         cc += dc
                     if not blocked:
                         open_lines+=1
-                        
-        return open_lines
+
+        distances = sorted(distances)
+        if len(distances) > 1:
+            two_best_distances = distances[0] + distances[1]
+        else: 
+            two_best_distances = distances[0]
+
+        return open_lines, count, two_best_distances
 
 
 
@@ -113,23 +132,7 @@ class AI_Player:
         unsafe = {m[1] for m in opponent_legal_moves if m[1]!="camp"}
         return sum(1 for r in range(8) for c in range(8) if (p:=Board.boardlayout[r][c]['piece']) and p.player==player and (r,c) not in unsafe)
 
-    def Zugzwang(self,Board, player):
-        legal = Board.get_legal_moves(player)
-        if len(legal) <= 1:
-            return 1
-        else:
-            return 0
 
-
-
-    def count_pieces(self,Board, player):
-        count = 0
-        for r in range(8):
-            for c in range(8):
-                if Board.boardlayout[r][c]['piece']:
-                    if Board.boardlayout[r][c]['piece'].player == player:
-                        count+=1
-        return count
 
     def two_best_distances(self,Board, player):
         if player == 'W':
@@ -158,15 +161,20 @@ class AI_Player:
                         
     def MiniMax(self, board, player_to_move,  depth, alpha, beta, root ):
         opponent = 'B' if player_to_move == 'W' else 'W'
+
+        player_moves = board.get_legal_moves(player_to_move)
+        opponent_moves = board.get_legal_moves(opponent)
+
         if depth == 0:
-            return self.evaluate(board, root)
+            return self.evaluate(board, root, player_moves, opponent_moves, player_to_move)
         over, winner = board.isOver()
         if over:
-            return self.evaluate(board,root)
+            return self.evaluate(board,root, player_moves, opponent_moves, player_to_move)
         
+
         if player_to_move == root:
             maxEval = -INF
-            for move in board.get_legal_moves(player_to_move):
+            for move in player_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -179,7 +187,7 @@ class AI_Player:
             return maxEval
         else:
             minEval = INF
-            for move in board.get_legal_moves(player_to_move):
+            for move in player_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
