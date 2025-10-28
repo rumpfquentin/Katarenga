@@ -12,6 +12,7 @@ from kivy.metrics import dp
 from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.dropdown import DropDown
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
@@ -22,6 +23,8 @@ import json
 class Move:
     src: tuple
     dst: Union[tuple, str]
+
+
 
 class Cell(Button, RecycleDataViewBehavior):
     def __init__(self, **kwargs):
@@ -117,28 +120,77 @@ class Cell(Button, RecycleDataViewBehavior):
             parent.on_cell_tap(r, c)
 
 class MenuScreen(Screen):
-    pass  
+    pass
+
+class PlayerDropDown(DropDown):
+    pass
+
+class DropDownButton(Button):
+    
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.txt = 'Player'
+
+class SetupScreen(Screen):
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.DifficultyDropdown = DropDown()
+        for dif in ['Hard', 'Medium', 'Easy']:
+            btn = Button(
+                text = dif,
+                size_hint_y = None,
+                size_hint_x = 50,
+                font_size = 32
+            )
+            btn.bind(on_release = lambda btn, d = dif: self.select_difficulty(d))
+            self.DifficultyDropdown.add_widget(btn)
+        
+        self.PlayerDropdown = DropDown()
+
+    
+    def select_difficulty(self, difficulty):
+
+        app = App.get_running_app()
+
+        if difficulty == 'Hard':
+            app.set_difficulty_hard()
+        elif difficulty == 'Medium':
+            app.set_difficulty_medium()
+        elif difficulty == 'Easy':
+            app.set_difficulty_easy()
+        
+        self.DifficultyDropdown.dismiss()
+        self.manager.transition.direction = 'up'
+        app.root.current = 'Board'
+
+    def open_dropdown(self, widget):
+
+        self.DifficultyDropdown.open(widget)
+
 class WinningScreen(Screen):
     message = StringProperty("")
+
 class WindowManager(ScreenManager):
     pass
+
 
 class GameState:
 
     def __init__(self):
-        self.players = ['human', 'ai']
+        self.players = ['ai', 'human']
         self.b = Board()
         self.ai = AI_Player()
         self.current_idx = 0
-        self.phase = ""
+    
         self.difficulty = 2
         self.mode = '1vAI'
+        self.colors = ['W', 'B']
         
 
 
     def end_move(self):
         self.current_idx = (self.current_idx + 1) % len(self.players)
-        self.phase = "awaiting input"
         Over, winner = self.b.isOver()
         if Over:
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))
@@ -192,18 +244,22 @@ class GameState:
 
     def AI_mode(self):
         self.mode = '1vAI'
-        self.players = ['human', 'ai']
+        self.players = ['ai', 'human']
 
     def ai_move(self,dt):
-        move= self.ai.find_best_move(self.b, 'B', self.difficulty)
+        color = self.colors[self.players.index('ai')]
+        move= self.ai.find_best_move(self.b, color, self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
-        ok, err, record = self.b.apply_move('B', move.src, move.dst)
+        ok, err, record = self.b.apply_move(color, move.src, move.dst)
         App.get_running_app().root.get_screen('Board').refresh_board()
         self.end_move()
 
 
     def start_move(self):
-        self.phase = "awaiting input"
+        print(self.current_player)
+        if self.current_player == 'ai':
+            Clock.schedule_once(self.ai_move, 1)
+        return 
 
     @property
     def current_player(self):
@@ -212,10 +268,7 @@ class GameState:
 
     def events_apply_move(self, move):
         if self.mode == '1vAI':
-            if self.current_player == 'human':
-                player_color = 'W'
-            elif self.current_player == 'ai':
-                player_color = 'B'
+            player_color = self.colors[self.players.index(self.current_player)]
         else:
             player_color = self.current_player
     
@@ -237,7 +290,6 @@ class BoardView(Screen):
 
     def on_kv_post(self, _):
         self.gs = GameState()
-        self.gs.start_move()
         self.status = f"Turn: {self.gs.current_player}"
         Clock.schedule_once(self._tighten, 0)
         self.refresh_board()
@@ -408,7 +460,7 @@ class BoardView(Screen):
             self.on_human_move(r,c,self.gs.current_player)
         else:
             if self.gs.current_player == 'human':
-                player_color = 'W'
+                player_color = self.gs.colors[self.gs.players.index('human')]
                 self.on_human_move(r,c,player_color)
             elif self.gs.current_player == 'ai':
                 return 
@@ -436,7 +488,6 @@ class KatarengaApp(App):
         game = sm.get_screen("Board")
         game.teardown()
         game.new_game()
-        sm.current = "Board"
 
     def game_won(self, winner_name):
         sm = self.root
@@ -479,7 +530,11 @@ class KatarengaApp(App):
         board.refresh_board()
         board.gs.b.boardlayout = grid
         board.refresh_board()
-    
+
+    def start_move(self):
+        sm = self.root
+        board = sm.get_screen('Board')
+        board.gs.start_move()
 
 
 if __name__ == "__main__":

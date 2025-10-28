@@ -34,8 +34,6 @@ class AI_Player:
 
         P = count_pieces_player - count_pieces_opponent
 
-        T = self.count_Threats(Board, root_player, opponent_legal_moves) - self.count_Threats(Board, opponent, player_legal_moves)
-
         S = self.safe_pieces(Board, root_player, opponent_legal_moves) - self.safe_pieces(Board, opponent, player_legal_moves)
 
         O = open_lines_player - open_lines_opponent
@@ -43,24 +41,21 @@ class AI_Player:
 
 
 
-        wD = 50
+        wD = 70
 
-        wM = 25
+        wM = 20
 
         wP = 120
 
-        wT = 10
-
         wS = 200
 
-        wO = 30
+        wO = 50
 
 
         return (C
                 + wD * D
                 + wM * M
                 + wP * P
-                + wT * T
                 + wS * S
                 + wO * O)
 

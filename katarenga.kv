@@ -1,4 +1,28 @@
-#:kivy 2.3.0
+<PlayerDropDown@DropDown>:
+
+    Button: 
+        text: 'Human'
+        size_hint_y: None
+        size_hint_x: 50
+        font_size:32
+        on_release:
+            app.change_players()
+
+    Button: 
+        text: 'AI'
+        size_hint_y: None
+        size_hint_x: 50
+        font_size:32
+
+
+<DropdDownButton@Button>:
+    Button:
+        pos_hint: {"center_x": 0.75, "center_y": 0.75}
+        text: root.txt
+        font_size: 32
+        size_hint: 0.2,0.08
+        on_release: 
+            root.DifficultyDropdown.open(self)
 
 <Cell>:
     background_normal: ''
@@ -66,6 +90,22 @@
                 app.root.current = 'Menu'
                 root.manager.transition_direction = 'down'
 
+<SetupScreen>:
+    name: 'Setup'
+    FloatLayout:
+        size_hint: 1,1
+        Button:
+            pos_hint: {"center_x": 0.75, "center_y": 0.75}
+            text: "Difficulty"
+            font_size: 32
+            size_hint: 0.2,0.08
+            on_release: 
+                root.DifficultyDropdown.open(self)
+        DropdDownButton:
+            pos_hint: {"center_x": 0.75, "center_y": 0.25}
+
+        DropdDownButton:
+            pos_hint: {"center_x": 0.25, "center_y": 0.25}
 
 
 <MenuScreen>:
@@ -80,77 +120,46 @@
         FloatLayout:
             size_hint: 1,1
             FloatLayout:
-                size_hint: 0.5,1
+                size_hint: 1,1
                 pos_hint: {"center_x": 0.5, "center_y": 0.7}
                 Button:
-                    pos_hint: {"center_x": 0.32, "center_y": 1}
+                    pos_hint: {"center_x": 0.25, "center_y": 1}
                     text: "NEW GAME"
                     font_size: 32
-                    size_hint: 0.3,0.15
+                    size_hint: 0.2,0.15
                     on_release: 
                         app.new_game()
-                        app.root.current = 'Board'
+                        app.root.current = 'Setup'
                         root.manager.transition.direction = 'up'
+                        app.start_move()
                 Button:
-                    pos_hint: {"center_x": 0.68, "center_y": 1}
-                    text: "1 VS 1"
-                    font_size: 32
-                    size_hint: 0.3,0.15
-                    on_release: 
-                        app.OneVsOne()
-                        app.root.current = 'Board'
-                        root.manager.transition.direction = 'up'
-            FloatLayout:
-                size_hint: 0.5,1
-                pos_hint: {"center_x": 0.5, "center_y": 0.5}
-                Button:
-                    pos_hint: {"center_x": 0.32, "center_y": 1}
-                    text: "Save Game"
-                    font_size: 32
-                    size_hint: 0.3,0.15
-                    on_release: 
-                        app.save_game()
-                Button:
-                    pos_hint: {"center_x": 0.68, "center_y": 1}
+                    pos_hint: {"center_x": .75, "center_y": 1}
                     text: "Load Game"
                     font_size: 32
-                    size_hint: 0.3,0.15
+                    size_hint: 0.2,0.15
                     on_release: 
                         app.load_game()
                         app.root.current = 'Board'
                         root.manager.transition.direction = 'up'
-            Button:
-                pos_hint: {"center_x": 0.5, "center_y": 0.8}
-                size_hint: 0.15,0.13
-                text: "HARD"
-                font_size: 32
-                on_release: 
-                    app.set_difficulty_hard()
-                    app.root.current = 'Board'
-                    root.manager.transition.direction = 'up'
-            Button:
-                pos_hint: {"center_x": 0.5, "center_y": 0.6}
-                text: "MEDIUM"
-                font_size: 32
-                size_hint: 0.15,0.13 
-                on_release: 
-                    app.set_difficulty_medium()
-                    app.root.current = 'Board'
-                    root.manager.transition.direction = 'up'
-            Button:
-                pos_hint: {"center_x": 0.5, "center_y": 0.4}
-                size_hint: None, None
-                text: "EASY"
-                font_size: 32
-                size_hint: 0.15,0.13 
-                on_release: 
-                    app.set_difficulty_easy()
-                    app.root.current = 'Board'
-                    root.manager.transition.direction = 'up'
+                        app.start_move()
+                Button:
+                    pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                    text: "Save Game"
+                    font_size: 32
+                    size_hint: 0.2,0.15
+                    on_release: 
+                        app.save_game()
+        
+
+                    
+
             
+            
+
 
 
 WindowManager:
     MenuScreen:
     BoardView:
     WinningScreen:
+    SetupScreen:
