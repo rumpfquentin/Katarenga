@@ -1,28 +1,4 @@
-<PlayerDropDown@DropDown>:
 
-    Button: 
-        text: 'Human'
-        size_hint_y: None
-        size_hint_x: 50
-        font_size:32
-        on_release:
-            app.change_players()
-
-    Button: 
-        text: 'AI'
-        size_hint_y: None
-        size_hint_x: 50
-        font_size:32
-
-
-<DropdDownButton@Button>:
-    Button:
-        pos_hint: {"center_x": 0.75, "center_y": 0.75}
-        text: root.txt
-        font_size: 32
-        size_hint: 0.2,0.08
-        on_release: 
-            root.DifficultyDropdown.open(self)
 
 <Cell>:
     background_normal: ''
@@ -72,40 +48,44 @@
                 width: self.minimum_width
                 height: self.minimum_height
                 spacing: dp(2)
-<WinningScreen>:
-    name: "Win"
-    BoxLayout:
-        orientation: 'vertical'
-        size: root.width, root.height
-        Label:
-            text: root.message
-            font_size: dp(70)
-            halign : "center"
-            valign: 'middle'
-        Button:
-            size_hint: None, None
-            size: dp(70), dp(50)
-            text: 'Menu'
-            on_release:
-                app.root.current = 'Menu'
-                root.manager.transition_direction = 'down'
+
 
 <SetupScreen>:
     name: 'Setup'
     FloatLayout:
         size_hint: 1,1
         Button:
-            pos_hint: {"center_x": 0.75, "center_y": 0.75}
+            pos_hint: {"center_x": 0.75, "center_y": 0.25}
             text: "Difficulty"
             font_size: 32
             size_hint: 0.2,0.08
             on_release: 
                 root.DifficultyDropdown.open(self)
-        DropdDownButton:
-            pos_hint: {"center_x": 0.75, "center_y": 0.25}
-
-        DropdDownButton:
+    
+        Button:
+            pos_hint: {"center_x": 0.25, "center_y": 0.75}
+            text: "White Player"
+            font_size: 32
+            size_hint: 0.2,0.08
+            on_release: 
+                root.white_drop_down.open(self)
+        Button:
+            pos_hint: {"center_x": 0.75, "center_y": 0.75}
+            text: "Black Player"
+            font_size: 32
+            size_hint: 0.2,0.08
+            on_release: 
+                root.black_drop_down.open(self)
+        Button:
             pos_hint: {"center_x": 0.25, "center_y": 0.25}
+            text: "Start Game"
+            font_size: 32
+            size_hint: 0.2,0.08
+            on_release: 
+                app.start_move()
+                app.root.current = 'Board'
+                root.manager.transition.direction = 'up'
+
 
 
 <MenuScreen>:
@@ -131,7 +111,6 @@
                         app.new_game()
                         app.root.current = 'Setup'
                         root.manager.transition.direction = 'up'
-                        app.start_move()
                 Button:
                     pos_hint: {"center_x": .75, "center_y": 1}
                     text: "Load Game"
@@ -141,7 +120,6 @@
                         app.load_game()
                         app.root.current = 'Board'
                         root.manager.transition.direction = 'up'
-                        app.start_move()
                 Button:
                     pos_hint: {"center_x": 0.5, "center_y": 0.4}
                     text: "Save Game"
@@ -161,5 +139,4 @@
 WindowManager:
     MenuScreen:
     BoardView:
-    WinningScreen:
     SetupScreen:

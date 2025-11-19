@@ -40,6 +40,8 @@ class Cell(Button, RecycleDataViewBehavior):
         self.high_color = None
         self.bind(size = self.sync_pieces, pos = self.sync_pieces)
 
+
+
     def refresh_view_attrs(self, rv, index, data):
         ret = super().refresh_view_attrs(rv, index, data)
         self._rv = rv
@@ -90,12 +92,6 @@ class Cell(Button, RecycleDataViewBehavior):
                 self.piece_rect.size = self.size
 
     def update_highlights(self):
-        if self.high_color:
-            try:
-                self.canvas.after.remove(self.high_color)
-            except:
-                pass
-            self.high_color = None
             
         if self.high_rect:
             try:
@@ -122,20 +118,17 @@ class Cell(Button, RecycleDataViewBehavior):
 class MenuScreen(Screen):
     pass
 
-class PlayerDropDown(DropDown):
-    pass
 
-class DropDownButton(Button):
-    
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        self.txt = 'Player'
 
 class SetupScreen(Screen):
 
     def __init__(self, **kw):
         super().__init__(**kw)
         self.DifficultyDropdown = DropDown()
+        self.white_drop_down = DropDown()
+        self.black_drop_down = DropDown()
+        self.current_txt_w = 'human'
+
         for dif in ['Hard', 'Medium', 'Easy']:
             btn = Button(
                 text = dif,
@@ -145,10 +138,35 @@ class SetupScreen(Screen):
             )
             btn.bind(on_release = lambda btn, d = dif: self.select_difficulty(d))
             self.DifficultyDropdown.add_widget(btn)
-        
-        self.PlayerDropdown = DropDown()
+        for player in ['Human', 'AI']:
+            btn = Button(
+                text = player,
+                size_hint_y = None,
+                size_hint_x = 50,
+                font_size = 32
+            )
+            btn.bind(on_release = lambda btn, p = player: self.select_white_player(p))
+            self.white_drop_down.add_widget(btn)
+        for player in ['Human', 'AI']:
+            btn = Button(
+                text = player,
+                size_hint_y = None,
+                size_hint_x = 50,
+                font_size = 32
+            )
+            btn.bind(on_release = lambda btn, p = player: self.select_black_player(p))
+            self.black_drop_down.add_widget(btn)
 
-    
+    def select_black_player(self, p):
+        print(p)
+        app = App.get_running_app()
+        app.change_players(1, p)
+
+    def select_white_player(self, p):
+        print(p)
+        app = App.get_running_app()
+        app.change_players(0, p)
+
     def select_difficulty(self, difficulty):
 
         app = App.get_running_app()
@@ -161,15 +179,8 @@ class SetupScreen(Screen):
             app.set_difficulty_easy()
         
         self.DifficultyDropdown.dismiss()
-        self.manager.transition.direction = 'up'
-        app.root.current = 'Board'
 
-    def open_dropdown(self, widget):
 
-        self.DifficultyDropdown.open(widget)
-
-class WinningScreen(Screen):
-    message = StringProperty("")
 
 class WindowManager(ScreenManager):
     pass
@@ -178,14 +189,14 @@ class WindowManager(ScreenManager):
 class GameState:
 
     def __init__(self):
-        self.players = ['ai', 'human']
+        self.players = ['human', 'human']
         self.b = Board()
         self.ai = AI_Player()
         self.current_idx = 0
     
         self.difficulty = 2
-        self.mode = '1vAI'
         self.colors = ['W', 'B']
+        self.game_over = False
         
 
 
@@ -194,9 +205,9 @@ class GameState:
         Over, winner = self.b.isOver()
         if Over:
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))
-        if self.mode == '1vAI':
-            if self.current_player == 'ai':
-                Clock.schedule_once(self.ai_move, 0)
+            self.game_over = True
+        if self.current_player == 'ai':
+            Clock.schedule_once(self.ai_move, 0)
 
 
 
@@ -206,19 +217,33 @@ class GameState:
         for row in grid:
             for square in row:
                 square['piece'] = str(square['piece'])
+        camps = {'W': [], "B": []}
+        for i in range(len(self.b.camps['W'])):
+            camps['W'].append(str(self.b.camps['W'][i]))
+        for i in range(len(self.b.camps['B'])):
+            camps['B'].append(str(self.b.camps['B'][i]))
+        print(camps)
+
+    
         data = {
                 "to_move": ['W', 'B'][self.current_idx],
-                "camps": self.b.camps,
+                "camps": camps,
                 "grid": grid
             }
 
         with open('SaveGame.json', 'w') as f:
             json.dump(data, f)
 
+
     def load_grid(self):
         with open('Savegame.json', 'r') as f:
             loaded = json.load(f)
-        self.b.camps = loaded['camps']
+        camps = loaded['camps']
+        for i in range(len(camps['W'])):
+            camps['W'][i] = Piece((camps["W"][i][0]),camps['W'][i][1:-1])
+        for i in range(len(camps['B'])):
+            camps['B'][i] = Piece((camps["B"][i][0]),camps['B'][i][1:-1])
+        self.b.camps = camps
         self.current_idx = ['W', 'B'].index(loaded['to_move'])
         board = loaded['grid']
         colours = []
@@ -237,17 +262,8 @@ class GameState:
         return board
         
 
-
-    def two_player_mode(self):
-        self.mode = '1v1'
-        self.players = ['W', 'B']
-
-    def AI_mode(self):
-        self.mode = '1vAI'
-        self.players = ['ai', 'human']
-
     def ai_move(self,dt):
-        color = self.colors[self.players.index('ai')]
+        color = self.colors[self.current_idx]
         move= self.ai.find_best_move(self.b, color, self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
         ok, err, record = self.b.apply_move(color, move.src, move.dst)
@@ -256,9 +272,9 @@ class GameState:
 
 
     def start_move(self):
-        print(self.current_player)
-        if self.current_player == 'ai':
-            Clock.schedule_once(self.ai_move, 1)
+        if not self.game_over:
+            if self.current_player == 'ai':
+                Clock.schedule_once(self.ai_move, 1)
         return 
 
     @property
@@ -267,10 +283,7 @@ class GameState:
 
 
     def events_apply_move(self, move):
-        if self.mode == '1vAI':
-            player_color = self.colors[self.players.index(self.current_player)]
-        else:
-            player_color = self.current_player
+        player_color = self.colors[self.current_idx]
     
         ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
         events = []
@@ -297,12 +310,10 @@ class BoardView(Screen):
     def new_game(self):
         self.selected = None
         difficulty = self.gs.difficulty
-        mode = self.gs.mode
         players = self.gs.players
         self.gs = None
         self.gs = GameState()
         self.gs.difficulty = difficulty
-        self.gs.mode = mode
         self.gs.players = players
         self.highlights = []
         self.refresh_board()
@@ -393,6 +404,7 @@ class BoardView(Screen):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
                     self.refresh_board()
+                    self.update_highlights(player_color)
                     self.gs.end_move()
                     return 
             elif player_color == 'B' and (r,c) in [(9,0), (9,9)]:
@@ -400,7 +412,9 @@ class BoardView(Screen):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
                     self.refresh_board()
+                    self.update_highlights(player_color)
                     self.gs.end_move()
+                    
                     return 
 
             else: 
@@ -456,11 +470,12 @@ class BoardView(Screen):
         self.refresh_board()
         
     def on_cell_tap(self, r, c):
-        if self.gs.mode == '1v1':
-            self.on_human_move(r,c,self.gs.current_player)
+
+        if self.gs.game_over:
+            return 
         else:
             if self.gs.current_player == 'human':
-                player_color = self.gs.colors[self.gs.players.index('human')]
+                player_color = self.gs.colors[self.gs.current_idx]
                 self.on_human_move(r,c,player_color)
             elif self.gs.current_player == 'ai':
                 return 
@@ -468,6 +483,8 @@ class BoardView(Screen):
         
 
     def is_own_piece(self, r, c, player_color):
+        if r > 7 or c > 7:
+            return False
         if self.gs.b.boardlayout[r][c]['piece']:
             if player_color == self.gs.b.boardlayout[r][c]['piece'].player:
                 return True
@@ -491,32 +508,25 @@ class KatarengaApp(App):
 
     def game_won(self, winner_name):
         sm = self.root
-        win = sm.get_screen("Win")
-        win.message = f"{winner_name} wins!"
-        sm.current = "Win"
+        game = sm.get_screen("Board")
+
+
 
     def set_difficulty_hard(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 3
-        board.gs.AI_mode()
         
     def set_difficulty_medium(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 2
-        board.gs.AI_mode()
 
     def set_difficulty_easy(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 1
-        board.gs.AI_mode()
     
-    def OneVsOne(self):
-        sm = self.root
-        board = sm.get_screen("Board")
-        board.gs.two_player_mode()
 
     def save_game(self):
         sm = self.root
@@ -536,6 +546,11 @@ class KatarengaApp(App):
         board = sm.get_screen('Board')
         board.gs.start_move()
 
+    def change_players(self, color, player):
+        sm = self.root
+        board = sm.get_screen('Board')
+        board.gs.players[color] = player.lower()
+        print(board.gs.players)
 
 if __name__ == "__main__":
     KatarengaApp().run()

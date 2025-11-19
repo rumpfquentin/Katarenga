@@ -104,7 +104,9 @@ class AI_Player:
         distances = sorted(distances)
         if len(distances) > 1:
             two_best_distances = distances[0] + distances[1]
-        else: 
+        elif len(distances) == 0: 
+            two_best_distances = 0
+        else:
             two_best_distances = distances[0]
 
         return open_lines, count, two_best_distances
