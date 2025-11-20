@@ -3,6 +3,10 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 import json
 import copy
+from pathlib import Path
+
+base_directory = Path(__file__).resolve().parent
+
 class Piece:
     def __init__(self, player, label):
         self.player = player
@@ -318,7 +322,8 @@ class Board:
 
 
     def randomlayout(self):
-        with open('Tiles.txt') as f:
+        Tiles_Path = base_directory / "assets" / "Tiles.txt"
+        with open(Tiles_Path) as f:
             raw_tiles = [line.strip() for line in f]  
         picks = [random.randint(i-1, i) for i in range(1, 8, 2)]
         quarters = [raw_tiles[i] for i in picks]
