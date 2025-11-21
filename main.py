@@ -13,11 +13,15 @@ from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.dropdown import DropDown
+import sys 
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
 import copy
 import json
+from pathlib import Path
+
+base_directory = Path(__file__).resolve().parent
 
 @dataclass
 class Move:
@@ -31,10 +35,10 @@ class Cell(Button, RecycleDataViewBehavior):
         
         super().__init__(**kwargs)
         self._rect = None 
-        self.cell_image_source = 'assets/Brown_Square.png'
+        self.cell_image_source = str(base_directory/'assets'/'Brown_Square.png')
         self.background_color = 0,0,0,0
-        self.white_piece_image_source = 'assets/white_pawn.png'
-        self.black_piece_image_source = 'assets/black_pawn.png'
+        self.white_piece_image_source = str(base_directory/'assets'/'white_pawn.png')
+        self.black_piece_image_source = str(base_directory/'assets'/'black_pawn.png')
         self.piece_rect = None
         self.high_rect = None
         self.high_color = None
@@ -48,7 +52,7 @@ class Cell(Button, RecycleDataViewBehavior):
 
         self.cell_index = index
         self.cell_text = data.get('text', '')
-        self.cell_image_source = data.get('cell_image_source', 'assets/Blue_Square.png')
+        self.cell_image_source = data.get('cell_image_source')
         self.background_normal = self.cell_image_source
         self.background_down = self.cell_image_source
         self.background_disabled_normal = self.cell_image_source
@@ -231,7 +235,7 @@ class GameState:
                 "grid": grid
             }
 
-        with open('SaveGame.json', 'w') as f:
+        with open('Savegame.json', 'w') as f:
             json.dump(data, f)
 
 
@@ -335,44 +339,44 @@ class BoardView(Screen):
                 is_highlighted = None
                 if r == 0 or c == 0 or r==9 or c ==9:
                     if (r,c) == (0,0):
-                        cell_image_source = 'assets/camp.png'
+                        cell_image_source = str(base_directory/'assets'/'camp.png')
                         if len(self.gs.b.camps['W']) > 0:
                             piece = self.gs.b.camps['W'][0]
                         else:
                             piece = None
                     elif (r,c) == (0,9):
-                        cell_image_source = 'assets/camp.png'
+                        cell_image_source = str(base_directory/'assets'/'camp.png')
                         if len(self.gs.b.camps['W']) > 1:
                             piece = self.gs.b.camps['W'][1]
                         else:
                             piece = None
                     elif (r,c) == (9,0):
-                        cell_image_source = 'assets/camp.png'
+                        cell_image_source = str(base_directory/'assets'/'camp.png')
                         if len(self.gs.b.camps['B']) > 0:
                             piece = self.gs.b.camps['B'][0]
                         else:
                             piece = None
                     elif (r,c) == (9,9):
-                        cell_image_source = 'assets/camp.png'
+                        cell_image_source = str(base_directory/'assets'/'camp.png')
                         if len(self.gs.b.camps['B']) > 1:
                             piece = self.gs.b.camps['B'][1]
                         else:
                             piece = None
 
                     else: 
-                        cell_image_source = 'assets/Brown_Square.png'
+                        cell_image_source = str(base_directory/'assets'/'Brown_Square.png')
                         piece = None
                 else:  
                     background_color = self.gs.b.colours[r-1][c-1]
                     piece =  self.gs.b.boardlayout[r-1][c-1]["piece"]
                     if background_color == 'Y':
-                        cell_image_source = 'assets/Yellow_Square.png'
+                        cell_image_source =  str(base_directory/'assets'/'Yellow_Square.png')
                     elif background_color == 'R':
-                        cell_image_source = 'assets/Red_Square.png'
+                        cell_image_source =  str(base_directory/'assets'/'Red_Square.png')
                     elif background_color == 'G':
-                        cell_image_source = 'assets/Green_Square.png'
+                        cell_image_source =  str(base_directory/'assets'/'Green_Square.png')
                     elif background_color == 'B':
-                        cell_image_source = 'assets/Blue_Square.png'
+                        cell_image_source =  str(base_directory/'assets'/'Blue_Square.png')
                 is_highlighted = False
                 if (r,c) in [(0,0), (0,9)]:
                     if ('campsW') in self.highlights:
@@ -498,7 +502,13 @@ class KatarengaApp(App):
     title = "Katarenga"
     def build(self):
         Window.size = (800, 700)
-        return Builder.load_file("katarenga.kv")
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            base = Path(sys._MEIPASS)
+        else:
+            base = Path(__file__).resolve().parent
+
+        kv_path = base / "katarenga.kv"
+        return Builder.load_file(str(kv_path))
     
     def new_game(self):
         sm = self.root
