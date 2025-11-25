@@ -21,19 +21,20 @@ import copy
 import json
 from pathlib import Path
 
-base_directory = Path(__file__).resolve().parent
+base_directory = Path(__file__).resolve().parent #base directory used for packagin using pyinstaller
 
 @dataclass
-class Move:
+class Move: #used in ai_move() to pass the ai's move to the apply_move() function in board.py
     src: tuple
     dst: Union[tuple, str]
 
 
 
-class Cell(Button, RecycleDataViewBehavior):
-    def __init__(self, **kwargs):
+class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDataViewBehaviour
+    def __init__(self, **kwargs): 
         
         super().__init__(**kwargs)
+        
         self._rect = None 
         self.cell_image_source = str(base_directory/'assets'/'Brown_Square.png')
         self.background_color = 0,0,0,0
@@ -41,15 +42,15 @@ class Cell(Button, RecycleDataViewBehavior):
         self.black_piece_image_source = str(base_directory/'assets'/'black_pawn.png')
         self.piece_rect = None
         self.high_rect = None
-        self.high_color = None
-        self.bind(size = self.sync_pieces, pos = self.sync_pieces)
+        self.bind(size = self.sync_pieces, pos = self.sync_pieces) #everytime pos or size change sync pieces is automatically called
+        
 
 
 
-    def refresh_view_attrs(self, rv, index, data):
+    def refresh_view_attrs(self, rv, index, data): #this function is automatically called when the grid changes and using poylmorphism I can customize what it does
         ret = super().refresh_view_attrs(rv, index, data)
         self._rv = rv
-
+        #The code below syncs the Cells of the grid with the Recycle View or rv which changes when any of the boards elements change e.g. a piece is moved
         self.cell_index = index
         self.cell_text = data.get('text', '')
         self.cell_image_source = data.get('cell_image_source')
@@ -66,12 +67,12 @@ class Cell(Button, RecycleDataViewBehavior):
         Clock.create_trigger(lambda dt: self.update_piece(), -1)()
         Clock.create_trigger(lambda dt: self.update_highlights(), -1)()
         return ret
-    
+    #if the window is rescaled this ensures that pieces keep their relative size and position
     def sync_pieces(self, *args):
         if self.piece_rect:
             self.piece_rect.pos = self.pos
             self.piece_rect.size = self.size
-
+    #This function will redraw the pieces onto their relevant squares
     def update_piece(self):
         if self.piece is None:
             if self.piece_rect:
@@ -94,7 +95,7 @@ class Cell(Button, RecycleDataViewBehavior):
                 self.piece_rect.source = piece_image_source
                 self.piece_rect.pos = self.pos
                 self.piece_rect.size = self.size
-
+    #This function redraws the highlights when a piece is selected
     def update_highlights(self):
             
         if self.high_rect:
@@ -110,9 +111,9 @@ class Cell(Button, RecycleDataViewBehavior):
                 with self.canvas.after:
                         self.high_color = Color(1,1,1)
                         self.high_rect = Line(rectangle = (self.x, self.y, dp(56), dp(56)), width = dp(2))
-
+    #This links the built in on_release() function with the BoardView's on_human_move() function
     def on_release(self):
-        r, c = divmod(self.cell_index, 10)
+        r, c = divmod(self.cell_index, 10) #converts the cells ID number to a row and column number
         parent = self.parent
         while parent and not isinstance(parent, BoardView):
             parent = parent.parent
@@ -124,10 +125,11 @@ class MenuScreen(Screen):
 
 
 
-class SetupScreen(Screen):
+class SetupScreen(Screen): #This class inherits from a Screen class but I overwrite it.
 
     def __init__(self, **kw):
         super().__init__(**kw)
+        #The dropdowns work better when created in python file and not .kv file so the init function creates all of the dropdowns
         self.DifficultyDropdown = DropDown()
         self.white_drop_down = DropDown()
         self.black_drop_down = DropDown()
@@ -161,13 +163,15 @@ class SetupScreen(Screen):
             btn.bind(on_release = lambda btn, p = player: self.select_black_player(p))
             self.black_drop_down.add_widget(btn)
 
+    #the following functions link the differnt dropdown buttons to their corresponding function in the KatarengaApp class
+
     def select_black_player(self, p):
-        print(p)
-        app = App.get_running_app()
+
+        app = App.get_running_app() #this retreives the KatarengaApp class
         app.change_players(1, p)
 
     def select_white_player(self, p):
-        print(p)
+
         app = App.get_running_app()
         app.change_players(0, p)
 
@@ -182,7 +186,7 @@ class SetupScreen(Screen):
         elif difficulty == 'Easy':
             app.set_difficulty_easy()
         
-        self.DifficultyDropdown.dismiss()
+        self.DifficultyDropdown.dismiss() #closes the dropdown
 
 
 
@@ -190,13 +194,13 @@ class WindowManager(ScreenManager):
     pass
 
 
-class GameState:
+class GameState: #This manages the game loop
 
     def __init__(self):
         self.players = ['human', 'ai']
         self.b = Board()
         self.ai = AI_Player()
-        self.current_idx = 0
+        self.current_idx = 0 #either 0 or 1 denoting white and black respectively
     
         self.difficulty = 2
         self.colors = ['W', 'B']
@@ -204,19 +208,19 @@ class GameState:
         
 
 
-    def end_move(self):
-        self.current_idx = (self.current_idx + 1) % len(self.players)
+    def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
+
+        self.current_idx = (self.current_idx + 1) % len(self.players) #changes the current idx to the next players 
         Over, winner = self.b.isOver()
         if Over:
-            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))
+            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))#triggers the game won function in the KatarengaApp class
             self.game_over = True
-        if self.current_player == 'ai':
-            Clock.schedule_once(self.ai_move, 0)
+        self.start_move()
 
 
 
 
-    def save_grid(self):
+    def save_grid(self): #makes a dictionary out of the entire grid and saves that to a json file
         grid = copy.deepcopy(self.b.boardlayout)
         for row in grid:
             for square in row:
@@ -239,7 +243,7 @@ class GameState:
             base = Path(sys._MEIPASS)
         else:
             base = Path(__file__).resolve().parent
-        #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
+        #The base path ensures that whether launching from IDE or packaged .app version Savegame.json can be found
         path = str(base / 'Savegame.json')
         with open(path, 'w') as f:
             json.dump(data, f)
@@ -250,7 +254,7 @@ class GameState:
             base = Path(sys._MEIPASS)
         else:
             base = Path(__file__).resolve().parent
-        #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
+        #The base path ensures that whether launching from IDE or packaged .app version Savegame.json can be found
         path = str(base / 'Savegame.json')
         with open(path, 'r') as f:
             loaded = json.load(f)
@@ -287,18 +291,17 @@ class GameState:
         self.end_move()
 
 
-    def start_move(self):
+    def start_move(self): #This gets called after end_move() and checks if it is the player's or ai's turn
         if not self.game_over:
             if self.current_player == 'ai':
                 Clock.schedule_once(self.ai_move, 1)
-        return 
+        return   #if it is the player's turn the player can now interact with his pieces freely so the function can terminate
 
     @property
-    def current_player(self):
+    def current_player(self): #useful property throughout the program as it allows to keep track of who's turn it is
         return self.players[self.current_idx]
 
-
-    def events_apply_move(self, move):
+    def events_apply_move(self, move): #This is an events backend that I can later use for animations, sounds and error messages to the user
         player_color = self.colors[self.current_idx]
     
         ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
@@ -311,19 +314,20 @@ class GameState:
             events.append({"type": "error", "message": err})
         return events
 
-class BoardView(Screen):
+class BoardView(Screen): #This class handles the way the board is graphically represented or viewed
+
     status = StringProperty("")
     gs = ObjectProperty(allownone=True)
     highlights = ListProperty([])
     selected = ObjectProperty(allownone = True)
 
-    def on_kv_post(self, _):
+    def on_kv_post(self, _): #automatically gets called when the BoardView screen is first instantiated
         self.gs = GameState()
-        self.status = f"Turn: {self.gs.current_player}"
+        self.status = f"Turn: {self.gs.current_player}" #property that can be used for animations and messages to the user. For example an animation when AI is thinking
         Clock.schedule_once(self._tighten, 0)
         self.refresh_board()
 
-    def new_game(self):
+    def new_game(self): #sets up a fresh game where all the settings are dicated by the preset in gamestate
         self.selected = None
         difficulty = self.gs.difficulty
         players = self.gs.players
@@ -334,22 +338,23 @@ class BoardView(Screen):
         self.highlights = []
         self.refresh_board()
     
+    #ensures that when a new game is created the old one gets removed properly
     def teardown(self):
         rv = self.ids.rv
         rv.data = []
         rv.refresh_from_data()
-
+    #makes the rv size the same as the layout managers minimum size so that everything narrowly fits onto the board.
     def _tighten(self, *_):
         rv = self.ids.rv
         lm = rv.layout_manager
         rv.size = (lm.minimum_width+dp(4), lm.minimum_height+dp(4))
 
-    def refresh_board(self):
+    def refresh_board(self): #This directly changes the recycle view's data 
         cells = []
         for r in range(10):
             for c in range(10):
                 is_highlighted = None
-                if r == 0 or c == 0 or r==9 or c ==9:
+                if r == 0 or c == 0 or r==9 or c ==9: #assigns the enemy camps different textures than the other surrounding squares
                     if (r,c) == (0,0):
                         cell_image_source = str(base_directory/'assets'/'camp.png')
                         if len(self.gs.b.camps['W']) > 0:
@@ -378,7 +383,7 @@ class BoardView(Screen):
                     else: 
                         cell_image_source = str(base_directory/'assets'/'Brown_Square.png')
                         piece = None
-                else:  
+                else:  #applies the correct texture to the differntly coloured squares
                     background_color = self.gs.b.colours[r-1][c-1]
                     piece =  self.gs.b.boardlayout[r-1][c-1]["piece"]
                     if background_color == 'Y':
@@ -389,13 +394,17 @@ class BoardView(Screen):
                         cell_image_source =  str(base_directory/'assets'/'Green_Square.png')
                     elif background_color == 'B':
                         cell_image_source =  str(base_directory/'assets'/'Blue_Square.png')
+                
                 is_highlighted = False
+                #manage highlighting the camps
                 if (r,c) in [(0,0), (0,9)]:
-                    if ('campsW') in self.highlights:
+                    if ('campsW') in self.highlights: #self.highlights are all the squares that the currently selected piece is able to move to
                         is_highlighted = True
                 elif (r,c) in [(9,0), (9,9)]:
                     if ('campsB') in self.highlights:
                         is_highlighted = True 
+
+                #manages highlighting all othe squares
                 elif (r-1, c-1) in self.highlights:
                     is_highlighted = True
 

@@ -7,11 +7,11 @@ from pathlib import Path
 
 base_directory = Path(__file__).resolve().parent
 
-class Piece:
+class Piece: 
     def __init__(self, player, label):
         self.player = player
         self.label = label
-    def __str__(self):
+    def __str__(self): #needed when saving the game to create a piece object into a piece string that can be stored in a .json file
         string = f'{self.player}{self.label}'
         return string
 
@@ -38,14 +38,14 @@ class Board:
             self.colours = RotateAntiClockwise90(self.colours)
         elif blacksside == 'left':
             self.colours = RotateClockwise90(self.colours)
-
+        #this allows the black player to chose its side of the board. If ai is black it just stays as is.
         board = []
-        for rows in range(8):
+        for rows in range(8): #iteratively creates the dictionary the grid row by row creating a 2-D list of dictionaries
             row = []
             for col in range(8):
                 row.append({'colour': self.colours[rows][col], 'piece': None})
             board.append(row)
-
+        
         for col in range(8):
             board[0][col]['piece'] = self.pieces['B'][col]
             board[7][col]['piece'] = self.pieces['W'][col]
@@ -109,7 +109,7 @@ class Board:
 
         return True, '', record
 
-    def undo_move(self, record):
+    def undo_move(self, record): #uses a Moverecord to undo a move made by the ai when exploring the game tree
         if record.was_camped:
             self.camps[record.piece.player].remove(record.piece)
         else:
