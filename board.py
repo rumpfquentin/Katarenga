@@ -18,6 +18,7 @@ class Piece:
 
 @dataclass
 class MoveRecord:
+    #A MoveRecord is always created when a move is made and is needed to undo that move
     piece: Piece
     src: Tuple[int, int]
     dest: Tuple[int, int]
@@ -34,9 +35,9 @@ class Board:
         if blacksside == 'bottom':
             self.colours = Rotate180(self.colours)
         elif blacksside == 'right':
-            self.colours = LeftRotate90(self.colours)
+            self.colours = RotateAntiClockwise90(self.colours)
         elif blacksside == 'left':
-            self.colours = RightRotate90(self.colours)
+            self.colours = RotateClockwise90(self.colours)
 
         board = []
         for rows in range(8):
@@ -54,20 +55,23 @@ class Board:
         self.camps = {'W': [], 'B': []}
 
     def create_pieces(self):
+        #creates 8 white and 8 black pieces and places them on the correct square
         for col in range(8):
             self.pieces['W'].append(Piece('W', f'W{col}'))
             self.pieces['B'].append(Piece('B', f'B{col}'))
 
     def apply_move(self, player, old_coors, coordinates):
+        # moves a piece from its current square to the selected if that move is legal
+        # returns if move was legal, an error message if not and a moverecord if yes.
         camp = False
         old_row, old_col = old_coors
         piece_to_move = self.boardlayout[old_row][old_col]['piece']
-            
-
-
+        
+        # as the enemy camps are managed by self.camps and not the boardlayout moves to enemy camps must be delt with seperately
         if coordinates == 'camp':
             camp = True
             move = 'camp'
+        
         else:
             try:
                 row, col = coordinates
@@ -116,6 +120,7 @@ class Board:
         self.boardlayout[new_row][new_col]['piece'] = record.piece
 
     def get_legal_moves(self, player):
+        # returns a list with all of the moves that a player is allowed to make
         legal_moves = []
         for r in range(len(self.boardlayout)):
             for c in range(len(self.boardlayout[r])):
@@ -139,6 +144,7 @@ class Board:
         return legal_moves
 
     def rook_moves(self, row, col):
+        #checks each cardinal direction for pieces on a square and returns each legal move that piece can make
         legal_moves = []
         piece = self.boardlayout[row][col]['piece']
 
@@ -193,6 +199,7 @@ class Board:
         return legal_moves
 
     def knight_moves(self, row, col):
+        # iteratively goes over each square that a knight could move to and returns all the legal moves that piece can make
         legal_moves = []
         piece = self.boardlayout[row][col]['piece']
         moves = [
@@ -213,6 +220,7 @@ class Board:
         return legal_moves
 
     def bishop_moves(self, row, col):
+        #cheks each diagaonal direction for a piece on a square and returns each square that piece can legally move to 
         legal_moves = []
         piece = self.boardlayout[row][col]['piece']
 
@@ -275,6 +283,7 @@ class Board:
         return legal_moves
 
     def king_moves(self, row, col):
+        # iteratively goes through each move that a king could make and returns each legal move that that piece can make
         legal_moves = []
         piece = self.boardlayout[row][col]['piece']
         moves = [
@@ -322,20 +331,21 @@ class Board:
 
 
     def randomlayout(self):
+        #uses the six preset double-sieded 4x4 tiles that katarenga comes with and selects four and arranges them ramdonly to form a board
         Tiles_Path = base_directory / "assets" / "Tiles.txt"
         with open(Tiles_Path) as f:
             raw_tiles = [line.strip() for line in f]  
         picks = [random.randint(i-1, i) for i in range(1, 8, 2)]
         quarters = [raw_tiles[i] for i in picks]
-
+        #This is needed so that the preset Tiles.txt can be found regardless of if the program is launched from IDE or .app or terminal
         grids = []
         for tile in quarters:
             rows = [list(tile[j:j+4]) for j in range(0, 16, 4)]
             rot = random.randint(1, 4)
             if rot == 1:
-                rows = RightRotate90(rows)
+                rows = RotateClockwise90(rows)
             elif rot == 2:
-                rows = LeftRotate90(rows)
+                rows = RotateAntiClockwise90(rows)
             elif rot == 3:
                 rows = Rotate180(rows)
             grids.append(rows)
@@ -344,27 +354,28 @@ class Board:
 
         final_grid = []
         for i in range(8):
-            if i < 4:
-                
+            if i < 4:                
                 combined = grids[0][i] + grids[1][i]
             else:
                 
                 combined = grids[2][i-4] + grids[3][i-4]
             final_grid.append(combined)
-
+        
         if final_grid[0][0] == final_grid[7][7] or final_grid[0][7] == final_grid[7][0]:
             return self.randomlayout()
         for c in range(8):
             if final_grid[0][c] == final_grid[7][c]:
                 return self.randomlayout()
-        
+        # if statements test whether two opposing edge squares or two diagonal edge squares are the same and discards the board if True.
+        #This prevents taking on the first move
         return final_grid
 
+#These functions are used throughout and so not included in board class
 
-def RightRotate90(grid):
+def RotateClockwise90(grid):
     return [list(reversed(col)) for col in zip(*grid)]
 
-def LeftRotate90(grid):
+def RotateAntiClockwise90(grid):
     return [list(col) for col in zip(*grid)][::-1]
 
 

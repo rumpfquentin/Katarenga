@@ -26,7 +26,7 @@ class AI_Player:
             return -INF
         
 
-        C = 1000 * (len(Board.camps[root_player]) - len(Board.camps[opponent]))
+        C = 5000 * (len(Board.camps[root_player]) - len(Board.camps[opponent]))
 
         D = two_best_distances_opponent - two_best_distances_player
 

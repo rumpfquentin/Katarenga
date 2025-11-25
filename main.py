@@ -193,7 +193,7 @@ class WindowManager(ScreenManager):
 class GameState:
 
     def __init__(self):
-        self.players = ['human', 'human']
+        self.players = ['human', 'ai']
         self.b = Board()
         self.ai = AI_Player()
         self.current_idx = 0
@@ -235,11 +235,23 @@ class GameState:
                 "grid": grid
             }
 
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
+            base = Path(sys._MEIPASS)
+        else:
+            base = Path(__file__).resolve().parent
+        #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
+        path = str(base / 'Savegame.json')
         with open('Savegame.json', 'w') as f:
             json.dump(data, f)
 
 
     def load_grid(self):
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
+            base = Path(sys._MEIPASS)
+        else:
+            base = Path(__file__).resolve().parent
+        #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
+        path = str(base / 'Savegame.json')
         with open('Savegame.json', 'r') as f:
             loaded = json.load(f)
         camps = loaded['camps']
@@ -502,19 +514,22 @@ class KatarengaApp(App):
     title = "Katarenga"
     def build(self):
         Window.size = (800, 700)
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
             base = Path(sys._MEIPASS)
         else:
             base = Path(__file__).resolve().parent
-
+        #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
         kv_path = base / "katarenga.kv"
         return Builder.load_file(str(kv_path))
-    
+        #This opens the GUI window in the format sepcified in the katarenga.kv setup file
+
     def new_game(self):
         sm = self.root
         game = sm.get_screen("Board")
         game.teardown()
         game.new_game()
+        #Links the NEW GAME GUI button to game logic
+
 
     def game_won(self, winner_name):
         sm = self.root
@@ -526,22 +541,26 @@ class KatarengaApp(App):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 3
-        
+        #Links the difficulty HARD GUI button to game logic
+
+
     def set_difficulty_medium(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 2
+        #Links the difficulty MEDIUM GUI button to game logic
 
     def set_difficulty_easy(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.difficulty = 1
-    
+        #Links the difficulty EASY GUI button to game logic
 
     def save_game(self):
         sm = self.root
         board = sm.get_screen("Board")
         board.gs.save_grid()
+        #Links the difficulty SAVE GAME GUI button to game logic
 
     def load_game(self):
         sm = self.root
@@ -550,17 +569,19 @@ class KatarengaApp(App):
         board.refresh_board()
         board.gs.b.boardlayout = grid
         board.refresh_board()
+        #Links the difficulty LOAD GAME GUI button to game logic
 
     def start_move(self):
         sm = self.root
         board = sm.get_screen('Board')
         board.gs.start_move()
+        #This starts the start move and end move cycle included in the game logic
 
     def change_players(self, color, player):
         sm = self.root
         board = sm.get_screen('Board')
         board.gs.players[color] = player.lower()
-        print(board.gs.players)
+        #When the player changes either white or black player this links that change to the players attribute in GameState
 
 if __name__ == "__main__":
     KatarengaApp().run()
