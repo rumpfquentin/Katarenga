@@ -241,7 +241,7 @@ class GameState:
             base = Path(__file__).resolve().parent
         #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
         path = str(base / 'Savegame.json')
-        with open('Savegame.json', 'w') as f:
+        with open(path, 'w') as f:
             json.dump(data, f)
 
 
@@ -252,7 +252,7 @@ class GameState:
             base = Path(__file__).resolve().parent
         #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
         path = str(base / 'Savegame.json')
-        with open('Savegame.json', 'r') as f:
+        with open(path, 'r') as f:
             loaded = json.load(f)
         camps = loaded['camps']
         for i in range(len(camps['W'])):
