@@ -306,6 +306,7 @@ class Board:
         b_pieces = []
         w_pieces = []
         winner = False
+        reason = None
         for r in range(8):
             for c in range(8):
                 piece = self.boardlayout[r][c]['piece']
@@ -316,17 +317,21 @@ class Board:
                         b_pieces.append(piece.label)
         if len(self.camps['W']) == 2:
             winner = 'White'
-            return True, winner
+            reason = 'two camps'
+            return True, winner, reason
         elif len(self.camps['B']) == 2:
             winner = 'Black'
-            return True, winner
+            reason = 'two camps'
+            return True, winner, reason
         if len(b_pieces) + len(self.camps['B']) < 2:
             winner = 'White'
-            return True, winner
+            reason = 'Insufficient Material'
+            return True, winner, reason
         elif len(w_pieces) + len(self.camps['W']) < 2:
             winner = 'Black'
-            return True, winner
-        return False, winner
+            reason = 'Insufficient Material'
+            return True, winner, reason
+        return False, winner, reason
 
 
 

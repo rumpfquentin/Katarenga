@@ -9,7 +9,8 @@ class AI_Player:
 
     def evaluate(self, Board, root_player, current_player_moves, current_opponent_moves, current_player): 
         opponent = 'B' if root_player == 'W' else 'W'
-
+        #root_player is the player that the find_best_move() function was called from, this will differ from the player who we want to evaluate at a minimzing node
+        #therefore a check is implemented so that we always evaluate the correct player's position
         if root_player == current_player:
             player_legal_moves = current_player_moves
             opponent_legal_moves = current_opponent_moves
@@ -20,13 +21,16 @@ class AI_Player:
         open_lines_player, count_pieces_player, two_best_distances_player = self.Board_Iterations(Board, root_player) 
         open_lines_opponent, count_pieces_opponent, two_best_distances_opponent = self.Board_Iterations(Board, opponent) 
 
+        #if the game can be won by either side on the next move then the evaluation returned is positive or negative infinity 
+
         if len(Board.camps[root_player])>= 2 or (count_pieces_opponent) + len(Board.camps[opponent])  < 2: 
             return  INF
         if len(Board.camps[opponent]) >= 2 or (count_pieces_player) + len(Board.camps[root_player]) < 2:
             return -INF
         
+        #differnet attributes of a position that the evaluate function compares, important here is that it's a zero-sum game so one person's loss is the other's gain
 
-        C = 5000 * (len(Board.camps[root_player]) - len(Board.camps[opponent]))
+        C = (len(Board.camps[root_player]) - len(Board.camps[opponent]))
 
         D = two_best_distances_opponent - two_best_distances_player
 
@@ -39,7 +43,7 @@ class AI_Player:
         O = open_lines_player - open_lines_opponent
 
 
-
+        wC = 5000
 
         wD = 70
 
@@ -52,20 +56,21 @@ class AI_Player:
         wO = 50
 
 
-        return (C
+        return (wC * C
                 + wD * D
                 + wM * M
                 + wP * P
                 + wS * S
                 + wO * O)
 
-
+    #all of the board iterations have been lumped together to increase efficiency
     def Board_Iterations(self, Board, player):
         open_lines = 0
         count = 0
         distances = []
         for r in range(8):
             for c in range(8):
+                # The code below counts the two best distances that a player has
                 piece = Board.boardlayout[r][c]['piece']
                 if  piece is None or piece.player != player:
                     continue
@@ -74,7 +79,7 @@ class AI_Player:
                     distances.append(r)
                 else:
                     distances.append(7-r)
-
+                #using the pre-defined directions the code below checks for open lines
                 colour = Board.boardlayout[r][c]['colour']
                 if colour == 'R':
                     dirs = ROOK_DIRS
@@ -82,10 +87,11 @@ class AI_Player:
                     dirs = BISHOP_DIRS
                 else:
                     continue
-
+                
                 for dr, dc in dirs:
-                    rr = dr + r
-                    cc = dc +c
+
+                    rr = dr + r #this offsets the starting row by the row we are currently on
+                    cc = dc +c #this offsets the strating column by the column we are currently on
                     blocked = False
                     while rr < 8 and rr > -1 and cc <8 and cc> -1 and not blocked:
 
@@ -96,8 +102,8 @@ class AI_Player:
                         if Board.boardlayout[rr][cc]['colour'] == colour:
                             break
 
-                        rr += dr
-                        cc += dc
+                        rr += dr #this increments the row by one unit of the row direction
+                        cc += dc #this increments the column by one unit of the column direction
                     if not blocked:
                         open_lines+=1
 
@@ -120,41 +126,15 @@ class AI_Player:
                 continue
             r, c = dest
             occ = Board.boardlayout[r][c]['piece']
-            if occ is not None and occ.player != player:
+            if occ is not None and occ.player != player: #if there is there is an enemy piece that you can take add 1 to your threats
                 threats += 1
         return threats               
 
-    def safe_pieces(self,Board, player, opponent_legal_moves):
+    def safe_pieces(self,Board, player, opponent_legal_moves): #similar to threats checks how many of your pieces can be taken
         opponent = 'W' if player == 'B' else 'B'
         unsafe = {m[1] for m in opponent_legal_moves if m[1]!="camp"}
         return sum(1 for r in range(8) for c in range(8) if (p:=Board.boardlayout[r][c]['piece']) and p.player==player and (r,c) not in unsafe)
 
-
-
-    def two_best_distances(self,Board, player):
-        if player == 'W':
-            distances = 0
-            count = 0
-            for r in range(8):
-                for c in range(8):
-                    if Board.boardlayout[r][c]['piece']:
-                        if Board.boardlayout[r][c]['piece'].player == player:
-                            distances+=r
-                            count +=1
-                        if count == 2:
-                            return distances
-        elif player == 'B':
-            distances = 0
-            count = 0
-            for r in range(7,-1,-1):
-                for c in range(8):
-                    if Board.boardlayout[r][c]['piece']:
-                        if Board.boardlayout[r][c]['piece'].player == player:
-                            distances+= (7-r)
-                            count +=1
-                        if count == 2:
-                            return distances
-        return 16
                         
     def MiniMax(self, board, player_to_move,  depth, alpha, beta, root ):
         opponent = 'B' if player_to_move == 'W' else 'W'
@@ -164,7 +144,7 @@ class AI_Player:
 
         if depth == 0:
             return self.evaluate(board, root, player_moves, opponent_moves, player_to_move)
-        over, winner = board.isOver()
+        over, winner, reason = board.isOver()
         if over:
             return self.evaluate(board,root, player_moves, opponent_moves, player_to_move)
         

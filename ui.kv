@@ -1,3 +1,36 @@
+<GameOverPopup>:
+    orientation: 'vertical'
+    size_hint : None, None
+    size : dp(420), dp(260)
+    winner_text: 'Winner'
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(18)
+        spacing: dp(16)
+        Label:
+            text: root.winner_text
+            font_size: dp(24)
+        Label:
+            font_size: dp(24)
+            text: root.reason
+
+<ClockWidget>:
+    orientation: 'vertical'
+    padding: dp(16)
+
+    Label: 
+        text: "White: " + root.white_text
+        font_size: 32
+        halign: 'left'
+        valign: 'bottom'
+    
+    Label: 
+        text: "Black: " + root.black_text
+        font_size: 32
+        halign: 'left'
+        valign: 'top'
+
 
 
 <Cell>:
@@ -48,6 +81,10 @@
                 width: self.minimum_width
                 height: self.minimum_height
                 spacing: dp(2)
+
+        ClockWidget:
+            pos_hint: {'center_x':0.1, 'center_y': 0.5}
+            size_hint: 0.2,0.8
 
 
 <SetupScreen>:

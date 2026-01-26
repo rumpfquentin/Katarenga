@@ -13,7 +13,11 @@ from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.dropdown import DropDown
+from kivy.uix.modalview import ModalView
+
 import sys 
+import time
+import math
 
 from board import Board, Piece, MoveRecord
 from ai import AI_Player
@@ -27,6 +31,96 @@ base_directory = Path(__file__).resolve().parent #base directory used for packag
 class Move: #used in ai_move() to pass the ai's move to the apply_move() function in board.py
     src: tuple
     dst: Union[tuple, str]
+
+
+class GameOverPopup(ModalView, BoxLayout):
+    winner_text = StringProperty('Winner')
+    reason = StringProperty('Error')
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+class GameClock:
+    def __init__(self):
+        self.remaining = {'W': 600, "B": 600}
+        self.initial_time = self.remaining
+        self.current = None
+        self.last_update = None
+        self.fisher_time = 3
+
+    def start(self, colour):
+    
+        self.current = colour
+        self.last_update = time.monotonic()
+
+    def update(self):
+        if self.current == None or self.last_update == None:
+            return
+        now = time.monotonic()
+        dt = now - self.last_update
+        self.remaining[self.current] -= dt
+        self.last_update = now
+    
+    def pause(self):
+        self.update()
+        self.current = None
+        self.last_update = None
+    
+    def get_remaining(self,player):
+        if player == self.current:
+            self.update()
+        return max(0.0, self.remaining[player])
+    
+    def switch(self, colour):
+        self.current = colour
+
+
+class ClockWidget(BoxLayout):
+    white_text = StringProperty('10:00')
+    black_text = StringProperty('10:00')
+    def __init__(self, **kwargs):
+        self.gs = None
+        super().__init__(**kwargs)
+
+    def on_kv_post(self, _):
+        Clock.schedule_interval(self.refresh, 0.1)
+
+    def refresh(self,dt):
+
+        self.app = App.get_running_app()
+        self.gs = App.get_running_app().root.get_screen("Board").gs
+        clock = self.gs.clock
+        if clock.current is not None and not self.gs.game_over:
+            if math.floor(clock.get_remaining(clock.current)*10) == 0:
+                clock.pause()
+                winner = 'Black' if clock.current == 'W' else 'White'
+                reason = 'Timed Out'
+                self.app.game_won(winner, reason)
+                
+        w = clock.get_remaining('W')
+        b = clock.get_remaining('B')
+        minutesw = int(w//60)
+        minutesb = int(b//60)
+        secondsw = w%60
+        secondsb = b%60
+
+        if secondsw < 10:  
+            if  minutesw == 0:
+                secondsw = f'0{math.floor(secondsw)}:{math.floor((secondsw*10)%10)}'
+            else:
+                secondsw = f'0{math.floor(secondsw)}'
+        else:
+            secondsw = math.floor(secondsw)
+
+        if secondsb < 10:  
+            if  minutesb == 0:
+                secondsb = f'0{math.floor(secondsb)}:{math.floor((secondsb*10)%10)}'
+            else:
+                secondsb = f'0{math.floor(secondsb)}'
+        else:
+            secondsb = math.floor(secondsb)
+
+        self.white_text = f'{minutesw}:{secondsw}'
+        self.black_text = f'{minutesb}:{secondsb}'
 
 
 
@@ -124,7 +218,6 @@ class MenuScreen(Screen):
     pass
 
 
-
 class SetupScreen(Screen): #This class inherits from a Screen class but I overwrite it.
 
     def __init__(self, **kw):
@@ -199,23 +292,30 @@ class GameState: #This manages the game loop
     def __init__(self):
         self.players = ['human', 'ai']
         self.b = Board()
+        self.clock = GameClock()
         self.ai = AI_Player()
         self.current_idx = 0 #either 0 or 1 denoting white and black respectively
-    
         self.difficulty = 2
         self.colors = ['W', 'B']
         self.game_over = False
         
 
-
     def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
-
+        mover = self.colors[self.current_idx]
+        self.clock.pause()
         self.current_idx = (self.current_idx + 1) % len(self.players) #changes the current idx to the next players 
-        Over, winner = self.b.isOver()
+        Over, winner, reason = self.b.isOver()
         if Over:
-            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner))#triggers the game won function in the KatarengaApp class
-            self.game_over = True
+            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
+        
+        fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
+        if int(fisher_time) < self.clock.initial_time[mover]:
+            self.clock.remaining[mover] = fisher_time
+        else:
+            self.clock.remaining[mover] = self.clock.initial_time[mover]
+
         self.start_move()
+    
 
 
 
@@ -230,7 +330,6 @@ class GameState: #This manages the game loop
             camps['W'].append(str(self.b.camps['W'][i]))
         for i in range(len(self.b.camps['B'])):
             camps['B'].append(str(self.b.camps['B'][i]))
-        print(camps)
 
     
         data = {
@@ -292,6 +391,7 @@ class GameState: #This manages the game loop
 
 
     def start_move(self): #This gets called after end_move() and checks if it is the player's or ai's turn
+        self.clock.start(self.colors[self.current_idx])
         if not self.game_over:
             if self.current_player == 'ai':
                 Clock.schedule_once(self.ai_move, 1)
@@ -302,6 +402,7 @@ class GameState: #This manages the game loop
         return self.players[self.current_idx]
 
     def events_apply_move(self, move): #This is an events backend that I can later use for animations, sounds and error messages to the user
+        
         player_color = self.colors[self.current_idx]
     
         ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
@@ -518,20 +619,23 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
 
 class KatarengaApp(App):
-
+    gs = ObjectProperty(None)
 
     title = "Katarenga"
+
+    def on_start(self):
+        self.gs = self.root.get_screen("Board").gs
+
     def build(self):
-        Window.size = (800, 700)
+        Window.size = (850, 700)
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
             base = Path(sys._MEIPASS)
         else:
             base = Path(__file__).resolve().parent
         #The base path ensures that whether launching from IDE or packaged .app version katarenga.kv can be found
-        kv_path = base / "katarenga.kv"
-        return Builder.load_file(str(kv_path))
+        kv_path = base / "ui.kv"
         #This opens the GUI window in the format sepcified in the katarenga.kv setup file
-
+        return Builder.load_file(str(kv_path))
     def new_game(self):
         sm = self.root
         game = sm.get_screen("Board")
@@ -540,9 +644,22 @@ class KatarengaApp(App):
         #Links the NEW GAME GUI button to game logic
 
 
-    def game_won(self, winner_name):
+    def game_won(self, winner, reason):
         sm = self.root
         game = sm.get_screen("Board")
+
+        game.gs.game_over = True   
+
+        winner_text = f'{winner} Wins!'
+        loser = 'Black' if winner == 'White' else 'White'
+        if reason == 'Timed Out':
+            reason_text = f'{loser} Timed Out'
+        elif reason == 'Insufficient Material':
+            reason_text = f'{loser} has Insufficient Material'
+        elif reason == 'two camps':
+            reason_text = f'{winner} Infiltrated the Enemies Camps'
+
+        GameOverPopup(winner_text = winner_text, reason = reason_text).open()
 
 
 
@@ -583,7 +700,10 @@ class KatarengaApp(App):
     def start_move(self):
         sm = self.root
         board = sm.get_screen('Board')
+        board.gs.clock.start('W')
         board.gs.start_move()
+    
+
         #This starts the start move and end move cycle included in the game logic
 
     def change_players(self, color, player):
