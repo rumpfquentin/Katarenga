@@ -32,6 +32,17 @@ class Move: #used in ai_move() to pass the ai's move to the apply_move() functio
     src: tuple
     dst: Union[tuple, str]
 
+class StyledDropDown(DropDown):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.container.spacing = dp(3)
+        self.container.padding= (dp(4), dp(4))
+        self.container.cols = 1
+
+class FormattedButton(Button):
+    radius = ListProperty([dp(14), dp(14),dp(14), dp(14)])
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 class GameOverPopup(ModalView, BoxLayout):
     winner_text = StringProperty('Winner')
@@ -42,7 +53,7 @@ class GameOverPopup(ModalView, BoxLayout):
 class GameClock:
     def __init__(self):
         self.remaining = {'W': 600, "B": 600}
-        self.initial_time = self.remaining
+        self.initial_time = {'W': 600, "B": 600}
         self.current = None
         self.last_update = None
         self.fisher_time = 3
@@ -65,8 +76,8 @@ class GameClock:
         self.current = None
         self.last_update = None
     
-    def get_remaining(self,player):
-        if player == self.current:
+    def get_remaining(self,player,ai):
+        if player == self.current and player != ai:
             self.update()
         return max(0.0, self.remaining[player])
     
@@ -77,6 +88,7 @@ class GameClock:
 class ClockWidget(BoxLayout):
     white_text = StringProperty('10:00')
     black_text = StringProperty('10:00')
+    ai = StringProperty(None)
     def __init__(self, **kwargs):
         self.gs = None
         super().__init__(**kwargs)
@@ -84,20 +96,27 @@ class ClockWidget(BoxLayout):
     def on_kv_post(self, _):
         Clock.schedule_interval(self.refresh, 0.1)
 
-    def refresh(self,dt):
-
+    def refresh(self, dt):
         self.app = App.get_running_app()
         self.gs = App.get_running_app().root.get_screen("Board").gs
         clock = self.gs.clock
+        self.ai = ''
+        for i in  range(len(self.gs.players)):
+            if self.gs.players[i] == 'ai':
+                self.ai = self.gs.colors[i]
+                break
         if clock.current is not None and not self.gs.game_over:
-            if math.floor(clock.get_remaining(clock.current)*10) == 0:
+            if math.floor(clock.get_remaining(clock.current, self.ai)*10,) == 0:
                 clock.pause()
                 winner = 'Black' if clock.current == 'W' else 'White'
                 reason = 'Timed Out'
                 self.app.game_won(winner, reason)
-                
-        w = clock.get_remaining('W')
-        b = clock.get_remaining('B')
+        
+
+
+
+        w = clock.get_remaining('W', self.ai)
+        b = clock.get_remaining('B', self.ai)
         minutesw = int(w//60)
         minutesb = int(b//60)
         secondsw = w%60
@@ -118,9 +137,9 @@ class ClockWidget(BoxLayout):
                 secondsb = f'0{math.floor(secondsb)}'
         else:
             secondsb = math.floor(secondsb)
-
-        self.white_text = f'{minutesw}:{secondsw}'
-        self.black_text = f'{minutesb}:{secondsb}'
+        
+        self.white_text = f'{minutesw}:{secondsw}' if self.ai != 'W' else '00:00'
+        self.black_text = f'{minutesb}:{secondsb}' if self.ai != 'B' else '00:00'
 
 
 
@@ -219,57 +238,79 @@ class MenuScreen(Screen):
 
 
 class SetupScreen(Screen): #This class inherits from a Screen class but I overwrite it.
+    player1 = StringProperty('White: Human')
+    player2 = StringProperty('Black: AI')
+    time_format = StringProperty('Time Format: 10 min')
+    difficulty_text = StringProperty('Difficulty: Medium')
+    def on_kv_post(self, base_widget):
+        return super().on_kv_post(base_widget)
 
     def __init__(self, **kw):
         super().__init__(**kw)
         #The dropdowns work better when created in python file and not .kv file so the init function creates all of the dropdowns
-        self.DifficultyDropdown = DropDown()
-        self.white_drop_down = DropDown()
-        self.black_drop_down = DropDown()
+        self.DifficultyDropdown = StyledDropDown()
+        self.white_drop_down = StyledDropDown()
+        self.black_drop_down = StyledDropDown()
+        self.time_drop_down = StyledDropDown()
+        
+
         self.current_txt_w = 'human'
 
         for dif in ['Hard', 'Medium', 'Easy']:
-            btn = Button(
+            btn = FormattedButton(
                 text = dif,
                 size_hint_y = None,
                 size_hint_x = 50,
-                font_size = 32
+                font_size = 32,
+                radius = [dp(4),]
             )
             btn.bind(on_release = lambda btn, d = dif: self.select_difficulty(d))
             self.DifficultyDropdown.add_widget(btn)
         for player in ['Human', 'AI']:
-            btn = Button(
+            btn = FormattedButton(
                 text = player,
                 size_hint_y = None,
                 size_hint_x = 50,
-                font_size = 32
+                font_size = 32,
+                radius = [dp(4),]
             )
             btn.bind(on_release = lambda btn, p = player: self.select_white_player(p))
             self.white_drop_down.add_widget(btn)
         for player in ['Human', 'AI']:
-            btn = Button(
+            btn = FormattedButton(
                 text = player,
                 size_hint_y = None,
                 size_hint_x = 50,
-                font_size = 32
+                font_size = 32,
+                radius = [dp(4),]
             )
             btn.bind(on_release = lambda btn, p = player: self.select_black_player(p))
             self.black_drop_down.add_widget(btn)
+        for time in ['1 min','1|1', '3|2', '10 min']:
+            btn = FormattedButton(
+                text = time,
+                size_hint_y = None,
+                size_hint_x = 50,
+                font_size = 32,
+                radius = [dp(4),]
+            )
+            btn.bind(on_release = lambda btn, t = time: self.change_time_format(t))
+            self.time_drop_down.add_widget(btn)
 
     #the following functions link the differnt dropdown buttons to their corresponding function in the KatarengaApp class
 
     def select_black_player(self, p):
-
+        self.player2 = f'Black: {p}'
         app = App.get_running_app() #this retreives the KatarengaApp class
         app.change_players(1, p)
 
     def select_white_player(self, p):
-
+        self.player1 = f'White: {p}'
         app = App.get_running_app()
         app.change_players(0, p)
 
     def select_difficulty(self, difficulty):
-
+        self.difficulty_text = f"Difficulty: {difficulty}"
         app = App.get_running_app()
 
         if difficulty == 'Hard':
@@ -280,6 +321,11 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
             app.set_difficulty_easy()
         
         self.DifficultyDropdown.dismiss() #closes the dropdown
+    
+    def change_time_format(self, format):
+        self.time_format = f"Time Format: {format}"
+        app = App.get_running_app()
+        app.ChangeTimeFormat(format)
 
 
 
@@ -309,10 +355,9 @@ class GameState: #This manages the game loop
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
         
         fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
-        if int(fisher_time) < self.clock.initial_time[mover]:
-            self.clock.remaining[mover] = fisher_time
-        else:
-            self.clock.remaining[mover] = self.clock.initial_time[mover]
+        
+        self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
+        
 
         self.start_move()
     
@@ -661,7 +706,31 @@ class KatarengaApp(App):
 
         GameOverPopup(winner_text = winner_text, reason = reason_text).open()
 
+    def ChangeTimeFormat(self, format):
+        sm = self.root
+        game = sm.get_screen("Board")
 
+        if format == "3|2":
+            game.gs.clock.remaining = {'W': 180, 'B': 180}
+            game.gs.clock.initial_time = {'W': 180, 'B': 180}
+            game.gs.clock.fisher_time = 2
+            
+        elif format == '1 min':
+            game.gs.clock.remaining = {'W': 60, 'B': 60}
+            game.gs.clock.initial_time = {'W': 60, 'B': 60}
+            game.gs.clock.fisher_time = 0
+        
+        elif format == '10 min':
+            game.gs.clock.remaining = {'W': 600, 'B': 600}
+            game.gs.clock.initial_time = {'W': 600, 'B': 600}
+            game.gs.clock.fisher_time = 0
+
+        elif format == '1|1':
+            game.gs.clock.remaining = {'W': 60, 'B': 60}
+            game.gs.clock.initial_time = {'W': 60, 'B': 60}
+            game.gs.clock.fisher_time = 1
+        
+            
 
     def set_difficulty_hard(self):
         sm = self.root
@@ -697,14 +766,11 @@ class KatarengaApp(App):
         board.refresh_board()
         #Links the difficulty LOAD GAME GUI button to game logic
 
-    def start_move(self):
+    def start_move(self):#This starts the start move and end move cycle included in the game logic
         sm = self.root
         board = sm.get_screen('Board')
         board.gs.clock.start('W')
         board.gs.start_move()
-    
-
-        #This starts the start move and end move cycle included in the game logic
 
     def change_players(self, color, player):
         sm = self.root

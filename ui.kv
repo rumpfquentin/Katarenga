@@ -1,3 +1,20 @@
+<FormattedButton>:
+    font_size: 32
+    bold: True
+    background_color: 0,0,0,0
+    color: 1,1,1,0.99
+    canvas.before:
+        Color:
+            rgba: (0.25,0.25,0.25,1) if self.state == 'normal' else (0.15,0.15,0.15,1)
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: self.radius
+
+    padding: dp(16)
+    spacing: dp(12)
+
+
 <GameOverPopup>:
     orientation: 'vertical'
     size_hint : None, None
@@ -91,37 +108,46 @@
     name: 'Setup'
     FloatLayout:
         size_hint: 1,1
-        Button:
+        FormattedButton:
             pos_hint: {"center_x": 0.75, "center_y": 0.25}
-            text: "Difficulty"
-            font_size: 32
+            text: root.difficulty_text
             size_hint: 0.2,0.08
+            radius: [dp(5),]
             on_release: 
                 root.DifficultyDropdown.open(self)
     
-        Button:
+        FormattedButton:
             pos_hint: {"center_x": 0.25, "center_y": 0.75}
-            text: "White Player"
-            font_size: 32
+            text: root.player1
             size_hint: 0.2,0.08
+            radius: [dp(5),]            
             on_release: 
                 root.white_drop_down.open(self)
-        Button:
+        FormattedButton:
             pos_hint: {"center_x": 0.75, "center_y": 0.75}
-            text: "Black Player"
-            font_size: 32
+            text: root.player2
             size_hint: 0.2,0.08
+            radius: [dp(5),]            
             on_release: 
                 root.black_drop_down.open(self)
-        Button:
+        FormattedButton:
             pos_hint: {"center_x": 0.25, "center_y": 0.25}
-            text: "Start Game"
-            font_size: 32
+            text: root.time_format
             size_hint: 0.2,0.08
+            radius: [dp(5),]            
+            on_release: 
+                root.time_drop_down.open(self)
+        
+        FormattedButton:
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            text: "Start Game"
+            size_hint: 0.2,0.08
+            radius: [dp(14),]
             on_release: 
                 app.start_move()
                 app.root.current = 'Board'
                 root.manager.transition.direction = 'up'
+
 
 
 
@@ -139,29 +165,32 @@
             FloatLayout:
                 size_hint: 1,1
                 pos_hint: {"center_x": 0.5, "center_y": 0.7}
-                Button:
+                FormattedButton:
                     pos_hint: {"center_x": 0.25, "center_y": 1}
                     text: "NEW GAME"
                     font_size: 32
                     size_hint: 0.2,0.15
+                    radius: [dp(5),]
                     on_release: 
                         app.new_game()
                         app.root.current = 'Setup'
                         root.manager.transition.direction = 'up'
-                Button:
+                FormattedButton:
                     pos_hint: {"center_x": .75, "center_y": 1}
                     text: "Load Game"
                     font_size: 32
                     size_hint: 0.2,0.15
+                    radius: [dp(5),]
                     on_release: 
                         app.load_game()
                         app.root.current = 'Board'
                         root.manager.transition.direction = 'up'
-                Button:
+                FormattedButton:
                     pos_hint: {"center_x": 0.5, "center_y": 0.4}
                     text: "Save Game"
                     font_size: 32
                     size_hint: 0.2,0.15
+                    radius: [dp(5),]
                     on_release: 
                         app.save_game()
         
