@@ -45,13 +45,13 @@ class AI_Player:
 
         wC = 5000
 
-        wD = 70
+        wD = 200
 
         wM = 20
 
         wP = 120
 
-        wS = 200
+        wS = 100
 
         wO = 50
 
