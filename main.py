@@ -375,12 +375,18 @@ class GameState: #This manages the game loop
             camps['W'].append(str(self.b.camps['W'][i]))
         for i in range(len(self.b.camps['B'])):
             camps['B'].append(str(self.b.camps['B'][i]))
-
+        self.clock.update()
+        white_time_remaining = self.clock.remaining['W']
+        black_time_remaining = self.clock.remaining['B']
+        time_remaining = f'{str(white_time_remaining)},{str(black_time_remaining)}'
+        fisher_time = str(self.clock.fisher_time)
     
         data = {
                 "to_move": ['W', 'B'][self.current_idx],
                 "camps": camps,
-                "grid": grid
+                "grid": grid,
+                'time_remaining': time_remaining,
+                'fisher_time': fisher_time
             }
 
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
@@ -422,6 +428,12 @@ class GameState: #This manages the game loop
                 row_colours.append(square['colour'])
             colours.append(row_colours)
         self.b.colours = colours
+        time_remaining = loaded['time_remaining']
+        time_remaining = time_remaining.split(',')
+        self.clock.remaining['W'] = float(time_remaining[0])
+        self.clock.remaining['B'] = float(time_remaining[1])
+        self.clock.fisher_time = loaded['fisher_time']
+
                 
         return board
         
