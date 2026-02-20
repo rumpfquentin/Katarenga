@@ -7,7 +7,54 @@ ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
 
-    def evaluate(self, Board, root_player, current_player_moves, current_opponent_moves, current_player): 
+    def order_moves(self, board, current_player, current_player_moves, current_opponent_moves, depth):
+        for src, dst in current_player_moves:
+            score = 0 
+            target = 'W' if current_player == 'B' else 'B'
+            #Critical
+            if dst == 'camp':
+                if len(board.camps['W']) == 1:
+                    score += 1_000_000  
+            #High Impact
+            if dst != 'camp':
+                if board[dst[0]][dst[1]].player == target:
+                    score += (7_500 * (5 - depth))
+            
+            if dst == 'camp':
+                score += 50_000
+                continue
+
+            #Medium Impact:
+
+            #progress towards camps
+            if current_player == 'W': 
+                score += 1_000 * (src[0] - dst[0])
+            else:
+                score += 1_000 * (dst[0] - src[0])
+            
+            #moving a threatened piece to a save square
+            enemydsts = []
+            for enemysrc, enemydst in current_opponent_moves:
+                enemydsts.append(enemydst)
+            if src in enemydsts and dst not in enemydsts:
+                score += 5_000
+            
+
+            if board.colours[dst[0]][dst[1]] in ['R', 'Y']:
+                score += 2_000
+
+            
+            
+            
+
+
+
+            
+    
+
+        
+
+    def evaluate(self, Board, root_player, current_player_moves, current_opponent_moves, current_player, depth): 
         opponent = 'B' if root_player == 'W' else 'W'
         #root_player is the player that the find_best_move() function was called from, this will differ from the player who we want to evaluate at a minimzing node
         #therefore a check is implemented so that we always evaluate the correct player's position
@@ -24,9 +71,9 @@ class AI_Player:
         #if the game can be won by either side on the next move then the evaluation returned is positive or negative infinity 
 
         if len(Board.camps[root_player])>= 2 or (count_pieces_opponent) + len(Board.camps[opponent])  < 2: 
-            return  INF
+            return  (INF - depth)
         if len(Board.camps[opponent]) >= 2 or (count_pieces_player) + len(Board.camps[root_player]) < 2:
-            return -INF
+            return  (-INF + depth)
         
         #differnet attributes of a position that the evaluate function compares, important here is that it's a zero-sum game so one person's loss is the other's gain
 
@@ -143,10 +190,10 @@ class AI_Player:
         opponent_moves = board.get_legal_moves(opponent)
 
         if depth == 0:
-            return self.evaluate(board, root, player_moves, opponent_moves, player_to_move)
+            return self.evaluate(board, root, player_moves, opponent_moves, player_to_move, depth)
         over, winner, reason = board.isOver()
         if over:
-            return self.evaluate(board,root, player_moves, opponent_moves, player_to_move)
+            return self.evaluate(board,root, player_moves, opponent_moves, player_to_move, depth)
         
 
         if player_to_move == root:
