@@ -8,24 +8,24 @@ BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
 
     def order_moves(self, board, current_player, current_player_moves, current_opponent_moves, depth):
-        for src, dst in current_player_moves:
+        target = 'W' if current_player == 'B' else 'B'
+        def score_move(move):
+            src, dst = move
             score = 0 
-            target = 'W' if current_player == 'B' else 'B'
             #Critical
             if dst == 'camp':
-                if len(board.camps['W']) == 1:
-                    score += 1_000_000  
+                if len(board.camps[current_player]) == 1:
+                    score += 1_000_000 + depth
+                #Medium Impact:
+                else:
+                    score += 50_000
+                return score
+
             #High Impact
-            if dst != 'camp':
-                if board[dst[0]][dst[1]].player == target:
+            if board.boardlayout[dst[0]][dst[1]]['piece']:
+                if board.boardlayout[dst[0]][dst[1]]['piece'].player == target:
                     score += (7_500 * (5 - depth))
             
-            if dst == 'camp':
-                score += 50_000
-                continue
-
-            #Medium Impact:
-
             #progress towards camps
             if current_player == 'W': 
                 score += 1_000 * (src[0] - dst[0])
@@ -42,6 +42,12 @@ class AI_Player:
 
             if board.colours[dst[0]][dst[1]] in ['R', 'Y']:
                 score += 2_000
+
+            return score
+
+        return sorted(current_player_moves, key= score_move, reverse=True)
+
+
 
             
             
@@ -195,10 +201,11 @@ class AI_Player:
         if over:
             return self.evaluate(board,root, player_moves, opponent_moves, player_to_move, depth)
         
+        ordered_moves = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
 
         if player_to_move == root:
             maxEval = -INF
-            for move in player_moves:
+            for move in ordered_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -211,7 +218,7 @@ class AI_Player:
             return maxEval
         else:
             minEval = INF
-            for move in player_moves:
+            for move in ordered_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err

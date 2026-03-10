@@ -124,6 +124,15 @@
             radius: [dp(5),]
             on_release: 
                 root.DifficultyDropdown.open(self)
+
+        FormattedButton:
+            size_hint: 0.05, 0.05
+            text: '↩'
+            pos_hint: {"center_x":0.1, "center_y": 0.9}
+            
+            on_release: 
+                app.root.current = 'Menu'
+                root.manager.transition.direction = 'down'
     
         FormattedButton:
             pos_hint: {"center_x": 0.25, "center_y": 0.75}
