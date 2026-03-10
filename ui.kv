@@ -14,6 +14,20 @@
     padding: dp(16)
     spacing: dp(12)
 
+<EscapeButton>:
+    background_normal: self.image_source
+    background_down: self.image_source
+    background_disabled_normal: self.image_source
+    background_disabled_down: self.image_source  
+    border: 0,0,0,0  
+
+<QuitButton>:
+    background_normal: self.image_source
+    background_down: self.image_source
+    background_disabled_normal: self.image_source
+    background_disabled_down: self.image_source  
+    border: 0,0,0,0  
+
 
 <GameOverPopup>:
     orientation: 'vertical'
@@ -64,14 +78,22 @@
     spacing: dp(12)
         
     FloatLayout:
-        FormattedButton:
-            size_hint: 0.05, 0.05
-            text: 'esc'
-            pos_hint: {"center_x":0.1, "center_y": 0.9}
+        EscapeButton:
+            size_hint: None, None
+            size: dp(40), dp(40)
+            pos_hint: {"center_x":0.08, "center_y": 0.92}
             
             on_release: 
                 app.root.current = 'Setup'
                 root.manager.transition.direction = 'down'
+        
+        QuitButton:
+            size_hint: None, None
+            size: dp(40), dp(40)
+            pos_hint: {"center_x":0.92, "center_y": 0.92}
+            
+            on_release: 
+                app.quit_game()
 
         BoxLayout:
             orientation: "vertical"
@@ -125,14 +147,22 @@
             on_release: 
                 root.DifficultyDropdown.open(self)
 
-        FormattedButton:
-            size_hint: 0.05, 0.05
-            text: '↩'
-            pos_hint: {"center_x":0.1, "center_y": 0.9}
+        EscapeButton:
+            size_hint: None, None
+            size: dp(40), dp(40)
+
+            pos_hint: {"center_x":0.08, "center_y": 0.92}
             
             on_release: 
                 app.root.current = 'Menu'
                 root.manager.transition.direction = 'down'
+        QuitButton:
+            size_hint: None, None
+            size: dp(40), dp(40)
+            pos_hint: {"center_x":0.92, "center_y": 0.92}
+            
+            on_release: 
+                app.quit_game()
     
         FormattedButton:
             pos_hint: {"center_x": 0.25, "center_y": 0.75}
@@ -171,46 +201,52 @@
 
 <MenuScreen>:
     name: 'Menu'
-    BoxLayout:
-        orientation: 'vertical'
+    FloatLayout:
         size: root.width, root.height
+
         Label:
-            pos_hint: {"center_x": 0.5, "center_y": 0.7}
+            pos_hint: {"center_x": 0.5, "center_y": 0.8}
             text: 'Katarenga'
             font_size: 50
+
+        QuitButton:
+            pos_hint: {"center_x":0.95, "center_y": 0.95}
+            size_hint: None, None
+            size: dp(40), dp(40)
+            
+            on_release: 
+                app.quit_game()
         FloatLayout:
-            size_hint: 1,1
-            FloatLayout:
-                size_hint: 1,1
-                pos_hint: {"center_x": 0.5, "center_y": 0.7}
-                FormattedButton:
-                    pos_hint: {"center_x": 0.25, "center_y": 1}
-                    text: "NEW GAME"
-                    font_size: 32
-                    size_hint: 0.2,0.15
-                    radius: [dp(5),]
-                    on_release: 
-                        app.new_game()
-                        app.root.current = 'Setup'
-                        root.manager.transition.direction = 'up'
-                FormattedButton:
-                    pos_hint: {"center_x": .75, "center_y": 1}
-                    text: "Load Game"
-                    font_size: 32
-                    size_hint: 0.2,0.15
-                    radius: [dp(5),]
-                    on_release: 
-                        app.load_game()
-                        app.root.current = 'Board'
-                        root.manager.transition.direction = 'up'
-                FormattedButton:
-                    pos_hint: {"center_x": 0.5, "center_y": 0.4}
-                    text: "Save Game"
-                    font_size: 32
-                    size_hint: 0.2,0.15
-                    radius: [dp(5),]
-                    on_release: 
-                        app.save_game()
+            size_hint: 1,0.6
+            pos_hint: {"center_x": 0.5, "center_y": 0.35}
+            FormattedButton:
+                pos_hint: {"center_x": 0.25, "center_y": 1}
+                text: "NEW GAME"
+                font_size: 32
+                size_hint: 0.2,0.15
+                radius: [dp(5),]
+                on_release: 
+                    app.new_game()
+                    app.root.current = 'Setup'
+                    root.manager.transition.direction = 'up'
+            FormattedButton:
+                pos_hint: {"center_x": .75, "center_y": 1}
+                text: "Load Game"
+                font_size: 32
+                size_hint: 0.2,0.15
+                radius: [dp(5),]
+                on_release: 
+                    app.load_game()
+                    app.root.current = 'Board'
+                    root.manager.transition.direction = 'up'
+            FormattedButton:
+                pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                text: "Save Game"
+                font_size: 32
+                size_hint: 0.2,0.15
+                radius: [dp(5),]
+                on_release: 
+                    app.save_game()
         
 
                     

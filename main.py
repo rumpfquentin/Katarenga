@@ -14,6 +14,7 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.dropdown import DropDown
 from kivy.uix.modalview import ModalView
+from kivy.core.audio import SoundLoader
 
 import sys 
 import time
@@ -43,6 +44,29 @@ class FormattedButton(Button):
     radius = ListProperty([dp(14), dp(14),dp(14), dp(14)])
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+class EscapeButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.image_source = str(base_directory/'assets'/'Return_Button.png')
+        self.background_normal = self.image_source
+        self.background_down = self.image_source
+        self.background_disabled_normal = self.image_source
+        self.background_disabled_down = self.image_source
+        self.background_color = (1, 1, 1, 1)
+        self.border = (0, 0, 0, 0)
+
+class QuitButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.image_source = str(base_directory/'assets'/'Quit_Button.png')
+        self.background_normal = self.image_source
+        self.background_down = self.image_source
+        self.background_disabled_normal = self.image_source
+        self.background_disabled_down = self.image_source
+        self.background_color = (1, 1, 1, 1)
+        self.border = (0, 0, 0, 0)
+
 
 class GameOverPopup(ModalView, BoxLayout):
     winner_text = StringProperty('Winner')
@@ -344,8 +368,9 @@ class GameState: #This manages the game loop
         self.difficulty = 2
         self.colors = ['W', 'B']
         self.game_over = False
+        self.move_sound = SoundLoader.load(str(base_directory / 'assets' / 'move.mp3'))
+        self.capture_sound = SoundLoader.load(str(base_directory / 'assets' / 'capture.mp3'))
         
-
     def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
         mover = self.colors[self.current_idx]
         self.clock.pause()
@@ -442,7 +467,7 @@ class GameState: #This manages the game loop
         color = self.colors[self.current_idx]
         move= self.ai.find_best_move(self.b, color, self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
-        ok, err, record = self.b.apply_move(color, move.src, move.dst)
+        self.events_apply_move(move)
         App.get_running_app().root.get_screen('Board').refresh_board()
         self.end_move()
 
@@ -465,9 +490,11 @@ class GameState: #This manages the game loop
         ok, err, record = self.b.apply_move(player_color, move.src, move.dst)
         events = []
         if ok:
-            events.append({"type": 'move', "from": move.src, 'to': move.dst})
             if record.captured_piece is not None:
-                events.append({"type": 'capture', 'at': move.dst})
+                if self.capture_sound:
+                    self.capture_sound.play()
+            elif self.move_sound:
+                self.move_sound.play()    
         else:
             events.append({"type": "error", "message": err})
         return events
@@ -742,7 +769,8 @@ class KatarengaApp(App):
             game.gs.clock.initial_time = {'W': 60, 'B': 60}
             game.gs.clock.fisher_time = 1
         
-            
+    def quit_game(self):
+        App.get_running_app().stop()
 
     def set_difficulty_hard(self):
         sm = self.root
