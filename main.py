@@ -509,6 +509,7 @@ class GameState: #This manages the game loop
         move= self.ai.find_best_move(self.b, color, self.difficulty)
         move = Move(src=move[0], dst= move[1]) 
         self.events_apply_move(move)
+        App.get_running_app().root.get_screen('Board').update_highlights(color)
         App.get_running_app().root.get_screen('Board').refresh_board()
         self.end_move()
 
@@ -705,6 +706,10 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
         self.highlights = []
 
+        if self.gs.players == ['ai', 'ai']:
+            self.refresh_board()
+            return 
+        
         if not self.selected:
             self.refresh_board()
             return 
