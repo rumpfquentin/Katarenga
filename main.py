@@ -83,11 +83,22 @@ class GameClock:
         self.fisher_time = 3
 
     def start(self, colour):
+        ''' Starts the game clock for the given colour
+
+        Args: Color
+        
+        '''
+        
     
         self.current = colour
         self.last_update = time.monotonic()
 
     def update(self):
+        ''' Updates the clock using time.monotic() 
+        
+        Only updates the time lost. Fisher time is added when a move is made. 
+        
+        '''
         if self.current == None or self.last_update == None:
             return
         now = time.monotonic()
@@ -96,16 +107,39 @@ class GameClock:
         self.last_update = now
     
     def pause(self):
+        '''
+        Pauses th clock to prevent updates.
+        '''
         self.update()
         self.current = None
         self.last_update = None
     
     def get_remaining(self,player,ai):
+        ''' a getter method for the remaining time of a player
+        
+        args: player  ('W' or B'), ai ('W' or B')
+
+        return: returns floating point value of players time
+        
+        '''
+
+
         if player == self.current and player != ai:
+            '''
+            If the player is the ai the clock never gets updated hence this self.update() shouldn't be run
+            The clock should only be updated for the player whose turn it is
+            '''
+
             self.update()
         return max(0.0, self.remaining[player])
     
     def switch(self, colour):
+        '''Switches which players clock is currently running
+
+        args: colour ('W' or 'B')
+    
+        '''
+
         self.current = colour
 
 
@@ -113,12 +147,19 @@ class ClockWidget(BoxLayout):
     white_text = StringProperty('10:00')
     black_text = StringProperty('10:00')
     ai = StringProperty(None)
-    def __init__(self, **kwargs):
+
+    def __init__(self, **kwargs): 
+        ''' constructor for the Kivy implemented ClockWidget which inherits from Kivy's BoxLayout
+        '''
         self.gs = None
         super().__init__(**kwargs)
 
     def on_kv_post(self, _):
-        Clock.schedule_interval(self.refresh, 0.1)
+        ''' Kivy function that is automatically called when the Widget is drawn.
+        '''
+        Clock.schedule_interval(self.refresh, 0.1) 
+        ''' 
+        '''
 
     def refresh(self, dt):
         self.app = App.get_running_app()
@@ -130,11 +171,14 @@ class ClockWidget(BoxLayout):
                 self.ai = self.gs.colors[i]
                 break
         if clock.current is not None and not self.gs.game_over:
-            if math.floor(clock.get_remaining(clock.current, self.ai)*10,) == 0:
-                clock.pause()
-                winner = 'Black' if clock.current == 'W' else 'White'
-                reason = 'Timed Out'
-                self.app.game_won(winner, reason)
+            for color in ['W', 'B']:
+                if color == self.ai:
+                    continue
+                if math.floor(clock.get_remaining(color, self.ai)*10,) == 0:
+                    clock.pause()
+                    winner = 'Black' if color == 'W' else 'White'
+                    reason = 'Timed Out'
+                    self.app.game_won(winner, reason)
         
 
 
@@ -378,7 +422,6 @@ class GameState: #This manages the game loop
         Over, winner, reason = self.b.isOver()
         if Over:
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
-        
         fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
         
         self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
@@ -457,7 +500,7 @@ class GameState: #This manages the game loop
         time_remaining = time_remaining.split(',')
         self.clock.remaining['W'] = float(time_remaining[0])
         self.clock.remaining['B'] = float(time_remaining[1])
-        self.clock.fisher_time = loaded['fisher_time']
+        self.clock.fisher_time = float(loaded['fisher_time'])
 
                 
         return board
@@ -473,7 +516,8 @@ class GameState: #This manages the game loop
 
 
     def start_move(self): #This gets called after end_move() and checks if it is the player's or ai's turn
-        self.clock.start(self.colors[self.current_idx])
+        if self.current_player != self.ai:
+            self.clock.start(self.colors[self.current_idx])
         if not self.game_over:
             if self.current_player == 'ai':
                 Clock.schedule_once(self.ai_move, 1)
@@ -516,10 +560,12 @@ class BoardView(Screen): #This class handles the way the board is graphically re
         self.selected = None
         difficulty = self.gs.difficulty
         players = self.gs.players
+        time = self.gs.clock.initial_time
         self.gs = None
         self.gs = GameState()
         self.gs.difficulty = difficulty
         self.gs.players = players
+        self.gs.clock.remaining = time
         self.highlights = []
         self.refresh_board()
     
@@ -731,7 +777,7 @@ class KatarengaApp(App):
     def game_won(self, winner, reason):
         sm = self.root
         game = sm.get_screen("Board")
-
+        game.gs.clock.pause()
         game.gs.game_over = True   
 
         winner_text = f'{winner} Wins!'
@@ -755,8 +801,8 @@ class KatarengaApp(App):
             game.gs.clock.fisher_time = 2
             
         elif format == '1 min':
-            game.gs.clock.remaining = {'W': 60, 'B': 60}
-            game.gs.clock.initial_time = {'W': 60, 'B': 60}
+            game.gs.clock.remaining = {'W': 5, 'B': 5}
+            game.gs.clock.initial_time = {'W': 5, 'B': 5}
             game.gs.clock.fisher_time = 0
         
         elif format == '10 min':
@@ -804,12 +850,13 @@ class KatarengaApp(App):
         board.refresh_board()
         board.gs.b.boardlayout = grid
         board.refresh_board()
+        board.gs.start_move()
         #Links the difficulty LOAD GAME GUI button to game logic
 
     def start_move(self):#This starts the start move and end move cycle included in the game logic
         sm = self.root
         board = sm.get_screen('Board')
-        board.gs.clock.start('W')
+
         board.gs.start_move()
 
     def change_players(self, color, player):

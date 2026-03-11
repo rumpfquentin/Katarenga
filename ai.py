@@ -49,17 +49,6 @@ class AI_Player:
 
 
 
-            
-            
-            
-
-
-
-            
-    
-
-        
-
     def evaluate(self, Board, root_player, current_player_moves, current_opponent_moves, current_player, depth): 
         opponent = 'B' if root_player == 'W' else 'W'
         #root_player is the player that the find_best_move() function was called from, this will differ from the player who we want to evaluate at a minimzing node
@@ -77,9 +66,9 @@ class AI_Player:
         #if the game can be won by either side on the next move then the evaluation returned is positive or negative infinity 
 
         if len(Board.camps[root_player])>= 2 or (count_pieces_opponent) + len(Board.camps[opponent])  < 2: 
-            return  (INF - depth)
+            return  (INF + depth)
         if len(Board.camps[opponent]) >= 2 or (count_pieces_player) + len(Board.camps[root_player]) < 2:
-            return  (-INF + depth)
+            return  (-INF - depth)
         
         #differnet attributes of a position that the evaluate function compares, important here is that it's a zero-sum game so one person's loss is the other's gain
 
