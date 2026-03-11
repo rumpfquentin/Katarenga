@@ -114,7 +114,7 @@ class GameClock:
         self.current = None
         self.last_update = None
     
-    def get_remaining(self,player,ai):
+    def get_remaining(self,player,AIs):
         ''' a getter method for the remaining time of a player
         
         args: player  ('W' or B'), ai ('W' or B')
@@ -123,8 +123,7 @@ class GameClock:
         
         '''
 
-
-        if player == self.current and player != ai:
+        if player == self.current and player not in AIs:
             '''
             If the player is the ai the clock never gets updated hence this self.update() shouldn't be run
             The clock should only be updated for the player whose turn it is
@@ -158,33 +157,28 @@ class ClockWidget(BoxLayout):
         ''' Kivy function that is automatically called when the Widget is drawn.
         '''
         Clock.schedule_interval(self.refresh, 0.1) 
-        ''' 
+        ''' calls refresh after a delay to ensure that the gamestate object has been created already. 
         '''
 
     def refresh(self, dt):
         self.app = App.get_running_app()
         self.gs = App.get_running_app().root.get_screen("Board").gs
         clock = self.gs.clock
-        self.ai = ''
-        for i in  range(len(self.gs.players)):
-            if self.gs.players[i] == 'ai':
-                self.ai = self.gs.colors[i]
-                break
         if clock.current is not None and not self.gs.game_over:
             for color in ['W', 'B']:
-                if color == self.ai:
+                if color in self.gs.AIs:
                     continue
-                if math.floor(clock.get_remaining(color, self.ai)*10,) == 0:
-                    clock.pause()
-                    winner = 'Black' if color == 'W' else 'White'
-                    reason = 'Timed Out'
-                    self.app.game_won(winner, reason)
-        
+            if math.floor(clock.get_remaining(color, self.gs.AIs)*10,) == 0:
+                clock.pause()
+                winner = 'Black' if color == 'W' else 'White'
+                reason = 'Timed Out'
+                self.app.game_won(winner, reason)
 
 
 
-        w = clock.get_remaining('W', self.ai)
-        b = clock.get_remaining('B', self.ai)
+
+        w = clock.get_remaining('W', self.gs.AIs)
+        b = clock.get_remaining('B', self.gs.AIs)
         minutesw = int(w//60)
         minutesb = int(b//60)
         secondsw = w%60
@@ -206,8 +200,8 @@ class ClockWidget(BoxLayout):
         else:
             secondsb = math.floor(secondsb)
         
-        self.white_text = f'{minutesw}:{secondsw}' if self.ai != 'W' else '00:00'
-        self.black_text = f'{minutesb}:{secondsb}' if self.ai != 'B' else '00:00'
+        self.white_text = f'{minutesw}:{secondsw}' if 'W' not in self.gs.AIs else '00:00'
+        self.black_text = f'{minutesb}:{secondsb}' if 'B' not in self.gs.AIs else '00:00'
 
 
 
@@ -414,6 +408,10 @@ class GameState: #This manages the game loop
         self.game_over = False
         self.move_sound = SoundLoader.load(str(base_directory / 'assets' / 'move.mp3'))
         self.capture_sound = SoundLoader.load(str(base_directory / 'assets' / 'capture.mp3'))
+        self.AIs = []
+        for i in range(len(self.players)):
+            if self.players[i] == 'ai':
+                self.AIs.append(self.colors[i])
         
     def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
         mover = self.colors[self.current_idx]
@@ -515,7 +513,8 @@ class GameState: #This manages the game loop
 
 
     def start_move(self): #This gets called after end_move() and checks if it is the player's or ai's turn
-        if self.current_player != self.ai:
+
+        if self.current_player not in self.AIs:
             self.clock.start(self.colors[self.current_idx])
         if not self.game_over:
             if self.current_player == 'ai':
@@ -804,8 +803,8 @@ class KatarengaApp(App):
             game.gs.clock.fisher_time = 2
             
         elif format == '1 min':
-            game.gs.clock.remaining = {'W': 5, 'B': 5}
-            game.gs.clock.initial_time = {'W': 5, 'B': 5}
+            game.gs.clock.remaining = {'W': 60, 'B': 60}
+            game.gs.clock.initial_time = {'W': 60, 'B': 60}
             game.gs.clock.fisher_time = 0
         
         elif format == '10 min':
@@ -866,6 +865,10 @@ class KatarengaApp(App):
         sm = self.root
         board = sm.get_screen('Board')
         board.gs.players[color] = player.lower()
+        board.gs.AIs = []
+        for i in range(len(board.gs.players)):
+            if board.gs.players[i] == 'ai':
+                board.gs.AIs.append(board.gs.colors[i])
         #When the player changes either white or black player this links that change to the players attribute in GameState
 
 if __name__ == "__main__":
