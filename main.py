@@ -422,12 +422,10 @@ class GameState: #This manages the game loop
         Over, winner, reason = self.b.isOver()
         if Over:
             Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
-        fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
-        
-        self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
-        
-
-        self.start_move()
+        else:
+            fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
+            self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
+            self.start_move()
     
 
 
