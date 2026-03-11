@@ -2,7 +2,10 @@ from board import Board, Piece, MoveRecord
 import time
 import math
 import random
-INF = math.inf
+INF = 1e10 
+'''not using math.inf as a winning position should consider the depth at which it occurs to insure ai plays first winning move.
+math.inf+depth = math.inf and hence I use a large integer instead
+'''
 ROOK_DIRS   = [(-1,0),(1,0),(0,-1),(0,1)]
 BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:

@@ -26,7 +26,7 @@ import copy
 import json
 from pathlib import Path
 
-base_directory = Path(__file__).resolve().parent #base directory used for packagin using pyinstaller
+base_directory = Path(__file__).resolve().parent #base directory used for packaging using pyinstaller
 
 @dataclass
 class Move: #used in ai_move() to pass the ai's move to the apply_move() function in board.py
@@ -34,19 +34,37 @@ class Move: #used in ai_move() to pass the ai's move to the apply_move() functio
     dst: Union[tuple, str]
 
 class StyledDropDown(DropDown):
+    '''
+    Inherits from Kivy's Dropdown but adds style changes in the constructor
+    '''
     def __init__(self, **kwargs):
+        '''
+        constructor for Styled Dropdown.
+        Sets the spacing between button that expands the dropdown and the padding between the different choices.
+        Defines that the container should only have one column
+        '''
         super().__init__(**kwargs)
         self.container.spacing = dp(3)
         self.container.padding= (dp(4), dp(4))
         self.container.cols = 1
 
 class FormattedButton(Button):
+    '''
+    Used in conjunction with the .kv class definition to change how the buttons look
+    '''
     radius = ListProperty([dp(14), dp(14),dp(14), dp(14)])
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+    
 
 class EscapeButton(Button):
+    '''
+    Inherits from Kivy's Button 
+    '''
     def __init__(self, **kwargs):
+        ''' Constructor for the Escape Button 
+        overwrites the way the background image of the button from plain to the resource found at the location self.image_source
+        '''
         super().__init__(**kwargs)
         self.image_source = str(base_directory/'assets'/'Return_Button.png')
         self.background_normal = self.image_source
@@ -56,7 +74,11 @@ class EscapeButton(Button):
         self.background_color = (1, 1, 1, 1)
         self.border = (0, 0, 0, 0)
 
+
 class QuitButton(Button):
+    ''' Constructor for the Quit Button 
+    overwrites the way the background image of the button from plain to the resource found at the location self.image_source
+    '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.image_source = str(base_directory/'assets'/'Quit_Button.png')
@@ -69,13 +91,24 @@ class QuitButton(Button):
 
 
 class GameOverPopup(ModalView, BoxLayout):
+    '''
+    Inherits from Kivy's ModalView and BoxLayout.
+    ModalView is Kivy's version of a pop-up window that can be dismissed again. 
+    '''
     winner_text = StringProperty('Winner')
     reason = StringProperty('Error')
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
 class GameClock:
+    '''The logical implementation of the gameclock
+    '''
     def __init__(self):
+        '''constructor for the gameclock
+        game starts of with a 10 minute or 600 second game.
+        The initial time is needed when calculatign fisher time to stop the clock going above its initial value
+        and when a new game is created to reset the clocks.
+        '''
         self.remaining = {'W': 600, "B": 600}
         self.initial_time = {'W': 600, "B": 600}
         self.current = None
@@ -108,7 +141,7 @@ class GameClock:
     
     def pause(self):
         '''
-        Pauses th clock to prevent updates.
+        Pauses the clock to prevent updates.
         '''
         self.update()
         self.current = None
@@ -143,6 +176,9 @@ class GameClock:
 
 
 class ClockWidget(BoxLayout):
+    '''the graphical representation of the game clock.
+    since game starts with 10:00 minutes white and black text are set to that initially.
+    '''
     white_text = StringProperty('10:00')
     black_text = StringProperty('10:00')
     ai = StringProperty(None)
@@ -161,29 +197,41 @@ class ClockWidget(BoxLayout):
         '''
 
     def refresh(self, dt):
+        '''refreshes the clock to display the correct time
+        args: dt (Clock.schedule function calls have a dt which represents the time delay)
+        '''
         self.app = App.get_running_app()
         self.gs = App.get_running_app().root.get_screen("Board").gs
+        '''self.gs has to be redefined at refresh otherwise an old version of gamestate will be used instead of the current one.
+        '''
         clock = self.gs.clock
         if clock.current is not None and not self.gs.game_over:
+            '''if clock.current is None then the clock is paused or hasn't been started yet so time shouldn't change.
+            if the game is over the same applies.
+            '''
             for color in ['W', 'B']:
                 if color in self.gs.AIs:
                     continue
-            if math.floor(clock.get_remaining(color, self.gs.AIs)*10,) == 0:
-                clock.pause()
-                winner = 'Black' if color == 'W' else 'White'
-                reason = 'Timed Out'
-                self.app.game_won(winner, reason)
+                '''if color is in an AI then the time shouldn't be update so continue
+                '''
+                if math.floor(clock.get_remaining(color, self.gs.AIs)*10,) == 0:
+                    clock.pause()
+                    winner = 'Black' if color == 'W' else 'White'
+                    reason = 'Timed Out'
+                    self.app.game_won(winner, reason)
 
 
 
 
         w = clock.get_remaining('W', self.gs.AIs)
         b = clock.get_remaining('B', self.gs.AIs)
+        '''uses clocks getter methods to get the remaining times in seconds as floats
+        '''
         minutesw = int(w//60)
         minutesb = int(b//60)
         secondsw = w%60
         secondsb = b%60
-
+        ''''''
         if secondsw < 10:  
             if  minutesw == 0:
                 secondsw = f'0{math.floor(secondsw)}:{math.floor((secondsw*10)%10)}'
@@ -199,6 +247,7 @@ class ClockWidget(BoxLayout):
                 secondsb = f'0{math.floor(secondsb)}'
         else:
             secondsb = math.floor(secondsb)
+        
         
         self.white_text = f'{minutesw}:{secondsw}' if 'W' not in self.gs.AIs else '00:00'
         self.black_text = f'{minutesb}:{secondsb}' if 'B' not in self.gs.AIs else '00:00'
@@ -424,8 +473,6 @@ class GameState: #This manages the game loop
             fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
             self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
             self.start_move()
-    
-
 
 
 
