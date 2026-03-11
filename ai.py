@@ -189,12 +189,11 @@ class AI_Player:
         over, winner, reason = board.isOver()
         if over:
             return self.evaluate(board,root, player_moves, opponent_moves, player_to_move, depth)
-        
-        ordered_moves = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
 
         if player_to_move == root:
             maxEval = -INF
-            for move in ordered_moves:
+            ordered_moves_max = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
+            for move in ordered_moves_max:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -207,9 +206,10 @@ class AI_Player:
             return maxEval
         else:
             minEval = INF
-            for move in ordered_moves:
+            ordered_moves_min = self.order_moves(board, opponent, opponent_moves, player_moves, depth)
+            for move in ordered_moves_min:
                 src, coords = move
-                ok, err, record = board.apply_move(player_to_move, src, coords)
+                ok, err, record = board.apply_move(opponent, src, coords)
                 assert ok, err
                 score = self.MiniMax(board, opponent, depth-1, alpha, beta, root)
                 minEval = min(minEval, score)
