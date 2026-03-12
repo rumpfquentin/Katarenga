@@ -448,7 +448,6 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
         '''
         creates the dropdown buttons for the different time formats selectable.
         '''
-
         for time in ['1 min','1|1', '3|2', '10 min']:
             btn = FormattedButton(
                 text = time,
@@ -511,6 +510,8 @@ class GameState: #This manages the game loop
         As gamestate keeps track of the game logic and game loop it needs to include all parts of the game:
         the clock, the ai player, difficulty and the type of player for black and white.
         '''
+        self.ai_event = None
+        self.end_move_event = None
         self.players = ['human', 'ai']
         self.b = Board()
         self.clock = GameClock()
@@ -525,19 +526,6 @@ class GameState: #This manages the game loop
         for i in range(len(self.players)):
             if self.players[i] == 'ai':
                 self.AIs.append(self.colors[i])
-        
-    def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
-        mover = self.colors[self.current_idx]
-        self.clock.pause()
-        self.current_idx = (self.current_idx + 1) % len(self.players) #changes the current idx to the next players 
-        Over, winner, reason = self.b.isOver()
-        if Over:
-            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
-        else:
-            fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
-            self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
-            self.start_move()
-
 
 
     def save_grid(self): #makes a dictionary out of the entire grid and saves that to a json file
@@ -628,7 +616,7 @@ class GameState: #This manages the game loop
         self.events_apply_move(move)
         App.get_running_app().root.get_screen('Board').update_highlights(color)
         App.get_running_app().root.get_screen('Board').refresh_board()
-        self.end_move()
+        self.end_move_event = Clock.schedule_once(lambda dt: self.end_move(), 0.05)
 
 
     def start_move(self): #This gets called after end_move() and checks if it is the player's or ai's turn
@@ -637,9 +625,33 @@ class GameState: #This manages the game loop
             self.clock.start(self.colors[self.current_idx])
         if not self.game_over:
             if self.current_player == 'ai':
-                Clock.schedule_once(self.ai_move, 1)
-        return   #if it is the player's turn the player can now interact with his pieces freely so the function can terminate
+                if self.difficulty > 2:
+                    self.ai_event = Clock.schedule_once(self.ai_move, 0.42)
+                else:
+                    self.ai_event = Clock.schedule_once(self.ai_move, 1)
 
+        return   #if it is the player's turn the player can now interact with his pieces freely so the function can terminate
+    
+    def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
+        mover = self.colors[self.current_idx]
+        self.clock.pause()
+        self.current_idx = (self.current_idx + 1) % len(self.players) #changes the current idx to the next players 
+        Over, winner, reason = self.b.isOver()
+        if Over:
+            Clock.schedule_once(lambda *_: App.get_running_app().game_won(winner, reason ))#triggers the game won function in the KatarengaApp class
+        else:
+            fisher_time = self.clock.remaining[mover] + self.clock.fisher_time
+            self.clock.remaining[mover] = min(self.clock.initial_time[mover], fisher_time)
+            self.start_move()
+
+
+    def stop_ai(self):
+        if self.ai_event is not None:
+            self.ai_event.cancel()
+            self.ai_event = None
+        if self.end_move_event is not None:
+            self.end_move_event.cancel()
+            self.end_move_event = None
     @property
     def current_player(self): #useful property throughout the program as it allows to keep track of who's turn it is
         return self.players[self.current_idx]
@@ -925,7 +937,15 @@ class BoardView(Screen): #This class handles the way the board is graphically re
                 return True
         return False
 
+    def on_leave(self, *args):
+        if self.gs:
+            self.gs.stop_ai()
+        return super().on_leave(*args)
 
+    def on_enter(self, *args):
+        if self.gs and not self.gs.game_over:
+            self.gs.start_move()
+        return super().on_enter(*args)
 
 class KatarengaApp(App):
     '''

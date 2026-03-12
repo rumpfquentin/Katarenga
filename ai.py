@@ -1,7 +1,7 @@
 from board import Board, Piece, MoveRecord
 import time
 import math
-import random
+import random 
 INF = 1e10 
 '''not using math.inf as a winning position should consider the depth at which it occurs to insure ai plays first winning move.
 math.inf+depth = math.inf and hence I use a large integer instead
@@ -11,6 +11,18 @@ BISHOP_DIRS = [(-1,-1),(-1,1),(1,-1),(1,1)]
 class AI_Player:
 
     def order_moves(self, board, current_player, current_player_moves, current_opponent_moves, depth):
+        '''a function that orders the legal moves a player can make in order of importance
+
+        args: 
+        board (dict)
+        current_player (str)
+        current_player_moves (list)
+        current_opponents_moves (list)
+        depth (int) the depth of the Minimax function 
+
+        
+        ret: returns the list of sorted legal moves in descending order.
+        '''
         target = 'W' if current_player == 'B' else 'B'
         def score_move(move):
             src, dst = move
@@ -18,7 +30,7 @@ class AI_Player:
             #Critical
             if dst == 'camp':
                 if len(board.camps[current_player]) == 1:
-                    score += 1_000_000 + depth
+                    score += 1_000_000
                 #Medium Impact:
                 else:
                     score += 50_000
@@ -27,7 +39,10 @@ class AI_Player:
             #High Impact
             if board.boardlayout[dst[0]][dst[1]]['piece']:
                 if board.boardlayout[dst[0]][dst[1]]['piece'].player == target:
-                    score += (7_500 * (5 - depth))
+                    score += (5000 * (depth))
+                    ''' Depth acts as a scale factor so early on in the tree captures are explored sooner while later 
+                    progress to camps outweighs captures.
+                    '''
             
             #progress towards camps
             if current_player == 'W': 
@@ -90,15 +105,15 @@ class AI_Player:
 
         wC = 5000
 
-        wD = 200
+        wD = 120
 
         wM = 20
 
-        wP = 120
+        wP = 400
 
         wS = 100
 
-        wO = 50
+        wO = 55
 
 
         return (wC * C
@@ -182,6 +197,18 @@ class AI_Player:
 
                         
     def MiniMax(self, board, player_to_move,  depth, alpha, beta, root ):
+        ''' calculates the best move for the player to move at the current position
+
+        args: 
+        board (dict) the game board
+        player_to_move (str) the player that is about to move
+        depth (int) how many moves to search ahead
+        alpha (int) best score maximising player can guarantee
+        beta (int) best score the minimising player can guarantee
+
+        ret: The evaluation of the position
+        
+        '''
         opponent = 'B' if player_to_move == 'W' else 'W'
 
         player_moves = board.get_legal_moves(player_to_move)
@@ -204,27 +231,38 @@ class AI_Player:
                 maxEval = max(maxEval, score)
                 alpha = max(alpha, score)
                 board.undo_move(record)
-                if beta <= alpha:
+                if beta <= alpha: #the minimiser already has a branch where he can guarantee a lower score hence the current branch will never be played
                     break
             return maxEval
         else:
             minEval = INF
-            ordered_moves_min = self.order_moves(board, opponent, opponent_moves, player_moves, depth)
+            ordered_moves_min = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
             for move in ordered_moves_min:
                 src, coords = move
-                ok, err, record = board.apply_move(opponent, src, coords)
+                ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
                 score = self.MiniMax(board, opponent, depth-1, alpha, beta, root)
                 minEval = min(minEval, score)
                 beta = min(beta, score)
                 board.undo_move(record)
-                if beta <= alpha:
+                if beta <= alpha: #the maximiser already has a branch where he can guarantee a higher score hence the current branch will never be played.
                     break
             return minEval
 
 
 
     def find_best_move(self,board, player, depth):
+        '''finds the best move for a given position
+        
+        args:
+        board (dict) the game board
+        player (str) the player trying to find the best move
+        depth (int) the number of moves to search ahead
+
+        ret: 
+        the best moeve
+        
+        '''
         moves = board.get_legal_moves(player)
         best_Move = moves[0]
         opponent = 'B' if player =='W' else 'W'
