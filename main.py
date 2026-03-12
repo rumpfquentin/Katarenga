@@ -231,7 +231,8 @@ class ClockWidget(BoxLayout):
         minutesb = int(b//60)
         secondsw = w%60
         secondsb = b%60
-        ''''''
+        '''following code is used when the timer runs below 10 seconds. Below ten seconds the timer starts displaying hundredths of a second
+        '''
         if secondsw < 10:  
             if  minutesw == 0:
                 secondsw = f'0{math.floor(secondsw)}:{math.floor((secondsw*10)%10)}'
@@ -255,8 +256,9 @@ class ClockWidget(BoxLayout):
 
 
 class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDataViewBehaviour
+    '''Cell is one square of the board
+    '''
     def __init__(self, **kwargs): 
-        
         super().__init__(**kwargs)
         
         self._rect = None 
@@ -271,10 +273,14 @@ class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDa
 
 
 
-    def refresh_view_attrs(self, rv, index, data): #this function is automatically called when the grid changes and using poylmorphism I can customize what it does
+    def refresh_view_attrs(self, rv, index, data): 
+        '''this function is automatically called when the grid changes and using poylmorphism i overwrite it to add functionality.
+        '''
         ret = super().refresh_view_attrs(rv, index, data)
         self._rv = rv
-        #The code below syncs the Cells of the grid with the Recycle View or rv which changes when any of the boards elements change e.g. a piece is moved
+        '''
+        The code below syncs the Cells of the grid with the Recycle View or rv which changes when any of the boards elements change e.g. a piece is moved
+        '''
         self.cell_index = index
         self.cell_text = data.get('text', '')
         self.cell_image_source = data.get('cell_image_source')
@@ -291,13 +297,18 @@ class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDa
         Clock.create_trigger(lambda dt: self.update_piece(), -1)()
         Clock.create_trigger(lambda dt: self.update_highlights(), -1)()
         return ret
-    #if the window is rescaled this ensures that pieces keep their relative size and position
+    '''
+    if the window is rescaled this ensures that pieces keep their relative size and position
+    '''
     def sync_pieces(self, *args):
         if self.piece_rect:
             self.piece_rect.pos = self.pos
             self.piece_rect.size = self.size
-    #This function will redraw the pieces onto their relevant squares
+
     def update_piece(self):
+        '''
+        This function will redraw the pieces onto their corresponding squares
+        '''
         if self.piece is None:
             if self.piece_rect:
                 self.canvas.after.remove(self.piece_rect)
@@ -319,8 +330,11 @@ class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDa
                 self.piece_rect.source = piece_image_source
                 self.piece_rect.pos = self.pos
                 self.piece_rect.size = self.size
-    #This function redraws the highlights when a piece is selected
+    
     def update_highlights(self):
+        '''
+        This procedure redraws the highlights when a piece is selected
+        '''
             
         if self.high_rect:
             try:
@@ -335,16 +349,24 @@ class Cell(Button, RecycleDataViewBehavior): #inherits fron Button and RecycleDa
                 with self.canvas.after:
                         self.high_color = Color(1,1,1)
                         self.high_rect = Line(rectangle = (self.x, self.y, dp(56), dp(56)), width = dp(2))
-    #This links the built in on_release() function with the BoardView's on_human_move() function
+
     def on_release(self):
+        '''
+        This links the built in on_release() function with the BoardView's on_human_move() function
+        '''
         r, c = divmod(self.cell_index, 10) #converts the cells ID number to a row and column number
         parent = self.parent
         while parent and not isinstance(parent, BoardView):
             parent = parent.parent
+        '''traverses the linked list of parents of the cell until BoardView is reached. When Boardview is the parent then 
+        on_cell_tap is called on BoardView which has the game logic implemented.
+        '''
         if parent:
             parent.on_cell_tap(r, c)
 
 class MenuScreen(Screen):
+    '''The MenuScreen is defined in ui.kv
+    '''
     pass
 
 
@@ -357,6 +379,9 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
         return super().on_kv_post(base_widget)
 
     def __init__(self, **kw):
+        '''constructor for the set up screen
+        defines the different dropdowns that the set up screen has to include
+        '''
         super().__init__(**kw)
         #The dropdowns work better when created in python file and not .kv file so the init function creates all of the dropdowns
         self.DifficultyDropdown = StyledDropDown()
@@ -366,7 +391,9 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
         
 
         self.current_txt_w = 'human'
-
+        '''
+        creates the dropdown buttons for the different difficulties
+        '''
         for dif in ['Hard', 'Medium', 'Easy']:
             btn = FormattedButton(
                 text = dif,
@@ -377,6 +404,13 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
             )
             btn.bind(on_release = lambda btn, d = dif: self.select_difficulty(d))
             self.DifficultyDropdown.add_widget(btn)
+        '''this binds the select_difficulty procedure to the Kivy buttons on_release function 
+        which gets called when the button is let go
+        '''
+
+        '''
+        creates the dropdown buttons for the different players selectable for white
+        '''
         for player in ['Human', 'AI']:
             btn = FormattedButton(
                 text = player,
@@ -387,6 +421,15 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
             )
             btn.bind(on_release = lambda btn, p = player: self.select_white_player(p))
             self.white_drop_down.add_widget(btn)
+
+        '''this binds the select_white_player procedure to the Kivy buttons on_release function 
+        which gets called when the button is let go
+        '''
+
+
+        '''
+        creates the dropdown buttons for the different players selectable for black
+        '''
         for player in ['Human', 'AI']:
             btn = FormattedButton(
                 text = player,
@@ -397,6 +440,15 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
             )
             btn.bind(on_release = lambda btn, p = player: self.select_black_player(p))
             self.black_drop_down.add_widget(btn)
+
+        '''this binds the select_black_player procedure to the Kivy buttons on_release function 
+        which gets called when the button is let go
+        '''
+        
+        '''
+        creates the dropdown buttons for the different time formats selectable.
+        '''
+
         for time in ['1 min','1|1', '3|2', '10 min']:
             btn = FormattedButton(
                 text = time,
@@ -407,12 +459,18 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
             )
             btn.bind(on_release = lambda btn, t = time: self.change_time_format(t))
             self.time_drop_down.add_widget(btn)
-
-    #the following functions link the differnt dropdown buttons to their corresponding function in the KatarengaApp class
+        
+        '''this binds the change_time_format procedure to the Kivy buttons on_release function 
+        which gets called when the button is let go
+        '''
+    
+    '''
+    The following functions link the functions called by the kivy dropdown buttons and the corresponding functions in the Katarenga App class.
+    '''
 
     def select_black_player(self, p):
         self.player2 = f'Black: {p}'
-        app = App.get_running_app() #this retreives the KatarengaApp class
+        app = App.get_running_app() #this retrieves the KatarengaApp class
         app.change_players(1, p)
 
     def select_white_player(self, p):
@@ -441,12 +499,18 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
 
 
 class WindowManager(ScreenManager):
+    '''Window manager is defined in ui.kv
+    '''
     pass
 
 
 class GameState: #This manages the game loop
 
     def __init__(self):
+        '''constructor for the game state
+        As gamestate keeps track of the game logic and game loop it needs to include all parts of the game:
+        the clock, the ai player, difficulty and the type of player for black and white.
+        '''
         self.players = ['human', 'ai']
         self.b = Board()
         self.clock = GameClock()
@@ -500,7 +564,7 @@ class GameState: #This manages the game loop
                 'fisher_time': fisher_time
             }
 
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version 
             base = Path(sys._MEIPASS)
         else:
             base = Path(__file__).resolve().parent
@@ -525,7 +589,9 @@ class GameState: #This manages the game loop
         for i in range(len(camps['B'])):
             camps['B'][i] = Piece((camps["B"][i][0]),camps['B'][i][1:-1])
         self.b.camps = camps
-        self.current_idx = ['W', 'B'].index(loaded['to_move'])
+        '''pieces in camps have been loaded from the json file and appended to the boards current camps
+        '''
+        self.current_idx = ['W', 'B'].index(loaded['to_move']) #Makes sure it is the correct players turn.
         board = loaded['grid']
         colours = []
         for row in board:
@@ -539,13 +605,19 @@ class GameState: #This manages the game loop
                 row_colours.append(square['colour'])
             colours.append(row_colours)
         self.b.colours = colours
+        '''As the arrangement of colours of the baord changes the old boards colours have to be loaded and constructed into a board and then assigned to it
+        This loop also recreated the pieces on each square.
+        '''
         time_remaining = loaded['time_remaining']
         time_remaining = time_remaining.split(',')
         self.clock.remaining['W'] = float(time_remaining[0])
         self.clock.remaining['B'] = float(time_remaining[1])
+
+        '''The time remaining for white is stored first followed by black and hence time_remaining[0] is always whites remaining time
+        '''
+
         self.clock.fisher_time = float(loaded['fisher_time'])
 
-                
         return board
         
 
@@ -597,7 +669,6 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
     def on_kv_post(self, _): #automatically gets called when the BoardView screen is first instantiated
         self.gs = GameState()
-        self.status = f"Turn: {self.gs.current_player}" #property that can be used for animations and messages to the user. For example an animation when AI is thinking
         Clock.schedule_once(self._tighten, 0)
         self.refresh_board()
 
@@ -698,40 +769,67 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
 
     def on_human_move(self, r,c, player_color):
+        '''This procedure is called when a human player whose turn it is presses a square
+        args: r,c (the row and column of the square pressed) and the players color
+        
+        '''
 
-        if r in [0,9] or c in [0,9]:
-            if player_color == 'W' and (r,c) in [(0,0), (0,9)]:
-                if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
+        '''
+        self.selected is used throughout: If a square is pressed with a players piece on it that will become the selected piece. 
+        if the player has yet to select a piece or has deselected a piece by pressing a different square without another piece of theirs on it, 
+        self.selected will be None
+        '''
+        if r in [0,9] or c in [0,9]: # if r or c are in that range then the outside of the board is pressed which includes empty squares but also the camps
+            if player_color == 'W' and (r,c) in [(0,0), (0,9)]: # checks whether the square clicked is an enemy camps for white
+                if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color): #checks whether the move is legal for the selected piece
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
                     self.refresh_board()
                     self.update_highlights(player_color)
                     self.gs.end_move()
+                    '''
+                    code above refreshes the board and updates the highlights before ending the move and hand over the turn to the other player
+                    '''
                     return 
             elif player_color == 'B' and (r,c) in [(9,0), (9,9)]:
+                '''
+                same code as above just for when the player is playing the black pieces.
+                '''
                 if (self.selected, ('camp')) in self.gs.b.get_legal_moves(player_color):
                     move = Move(src = self.selected, dst=('camp'))
                     events = self.gs.events_apply_move(move)
                     self.refresh_board()
                     self.update_highlights(player_color)
                     self.gs.end_move()
-                    
                     return 
 
             else: 
                 return 
+        
+        '''
+        Previous code was for dealing with moves to camps at the edge of the board.
+        The following code is for handling squares inside the 8x8 board.
+        '''
 
         if self.selected is None:
+            '''
+            responsible for selecting a piece if there currently is none selected
+            '''
             if self.is_own_piece(r-1,c-1, player_color):
                 self.selected = (r-1,c-1)
-                self.status = 'selected'
                 self.update_highlights(player_color)
             self.update_highlights(player_color)
             return 
         
         if (self.selected,(r-1,c-1)) in self.gs.b.get_legal_moves(player_color):
+            '''
+            r-1, c-1 maps the visual 10x10 grid onto the 8x8 board and then checks whether that move is legal
+            '''
             move = Move(src = self.selected, dst=(r-1,c-1))
             events = self.gs.events_apply_move(move)
+            '''
+            everytime a move is played it goes through the events_apply_move so that the appropriate sound effects can be played
+            '''
             self.selected = None
             self.update_highlights(player_color)
             self.refresh_board()
@@ -739,24 +837,38 @@ class BoardView(Screen): #This class handles the way the board is graphically re
             return 
         
         if self.is_own_piece(r-1,c-1, player_color):
+            '''
+            this handles new pieces being selected when there is already a piece selected
+            '''
             self.selected = (r-1,c-1)
             self.update_highlights(player_color)
             return 
-        
         self.selected = None
         self.update_highlights(player_color)
         self.refresh_board()
         return
     
+
+    
     def update_highlights(self, player_color):
+        '''When a piece is selected the highlightes squares need to be updated
+        args: player_color the colour of the player
+        '''
 
         self.highlights = []
 
         if self.gs.players == ['ai', 'ai']:
+            '''
+            fixes bug: if the user switches to ai against ai dafter selecting a piece and creating the highlights
+            the highlights would stay permamently as the player cannot deselect the piece as it isn't their turn.
+            '''
             self.refresh_board()
             return 
-        
+
+
         if not self.selected:
+            ''' if there is no piece selected there shouldn't be any highlights
+            '''
             self.refresh_board()
             return 
         
@@ -765,16 +877,21 @@ class BoardView(Screen): #This class handles the way the board is graphically re
             if src == self.selected:
                 if dst == 'camp':
                     if player_color == 'W':
-                        camps = ('campsW')
+                        camps = ('campsW') # campsW has to be a tuple as dst is always treated as a tuple
                         self.highlights.append(camps)
                     elif player_color == 'B':
-                        camps = ('campsB')
+                        camps = ('campsB') # campsB has to be a tuple as dst is always treated as a tuple
                         self.highlights.append(camps)
                 else:
                     self.highlights.append(dst)
         self.refresh_board()
         
     def on_cell_tap(self, r, c):
+        '''This is the Boardview's on_cell_tap which is called when a cell is pressed
+
+        args: r,c the row and column of the cell pressed
+
+        '''
 
         if self.gs.game_over:
             return 
@@ -782,13 +899,26 @@ class BoardView(Screen): #This class handles the way the board is graphically re
             if self.gs.current_player == 'human':
                 player_color = self.gs.colors[self.gs.current_idx]
                 self.on_human_move(r,c,player_color)
+                '''if the player is human and it is their turn then the on_human_function can be called
+                '''
             elif self.gs.current_player == 'ai':
                 return 
 
         
 
     def is_own_piece(self, r, c, player_color):
+        '''Function that checks whether a piece belongs to a certain player
+
+        args: r,c (the coordinates of the piece), player_color
+
+        ret: Bool
+        
+        '''
         if r > 7 or c > 7:
+            ''' result of mapping 10x10 visual grid to 8x8 board. is_own piece is called with r-1 c-1 and r-1, c-1
+            are automatically checked to be above 0 but they can be 8 if the bottom row or rightmost column are pressed.
+            8 is out of range for the boardlayout and hence boardlayout[8][8] would result in an error
+            '''
             return False
         if self.gs.b.boardlayout[r][c]['piece']:
             if player_color == self.gs.b.boardlayout[r][c]['piece'].player:
@@ -798,14 +928,27 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
 
 class KatarengaApp(App):
+    '''
+    The KatarengaApp class inherits from Kivy's App class and acts as the central coordinator for the application
+    '''
     gs = ObjectProperty(None)
 
     title = "Katarenga"
 
     def on_start(self):
+        '''
+        automatically gets called when Class is instantiated and creates a gamestate object which manages the game logic.
+        '''
         self.gs = self.root.get_screen("Board").gs
 
     def build(self):
+
+        '''
+        automatically called when class is instantiated.
+        returns the root widget of the .kv file which in my case is the ScreenManager subclass. 
+        self.root will be set to that root widget
+        '''
+
         Window.size = (850, 700)
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
             base = Path(sys._MEIPASS)
@@ -815,20 +958,35 @@ class KatarengaApp(App):
         kv_path = base / "ui.kv"
         #This opens the GUI window in the format sepcified in the katarenga.kv setup file
         return Builder.load_file(str(kv_path))
+    
     def new_game(self):
+        '''
+        procedure that links the new_game function in BoardView to the corresponding New Game Button
+        '''
         sm = self.root
+        '''
+        the root of the KatarengaApp class is set to the ScreenManager which contains the different screens
+        '''
         game = sm.get_screen("Board")
+        '''returns the class with name 'Board' which in my case is the BoardView class
+        '''
         game.teardown()
         game.new_game()
-        #Links the NEW GAME GUI button to game logic
 
 
     def game_won(self, winner, reason):
+        '''called when the game is over 
+        args: winner, reason
+        
+        '''
         sm = self.root
         game = sm.get_screen("Board")
         game.gs.clock.pause()
         game.gs.game_over = True   
 
+        '''
+        winner message is constructed
+        '''
         winner_text = f'{winner} Wins!'
         loser = 'Black' if winner == 'White' else 'White'
         if reason == 'Timed Out':
@@ -838,12 +996,22 @@ class KatarengaApp(App):
         elif reason == 'two camps':
             reason_text = f'{winner} Infiltrated the Enemies Camps'
 
+
         GameOverPopup(winner_text = winner_text, reason = reason_text).open()
 
     def ChangeTimeFormat(self, format):
+        '''procedure that changes the time format in the GameClock class to the one selected from the time format 
+        dropdown
+
+        args: format (string that corresponds to give time format)
+        
+        '''
         sm = self.root
         game = sm.get_screen("Board")
 
+        '''
+        format is mapped to the correct change to the GameClock object in GameState
+        '''
         if format == "3|2":
             game.gs.clock.remaining = {'W': 180, 'B': 180}
             game.gs.clock.initial_time = {'W': 180, 'B': 180}
@@ -865,7 +1033,10 @@ class KatarengaApp(App):
             game.gs.clock.fisher_time = 1
         
     def quit_game(self):
-        App.get_running_app().stop()
+        '''
+        maps the quit button to the corresponding .stop() function
+        '''
+        self.stop()
 
     def set_difficulty_hard(self):
         sm = self.root
