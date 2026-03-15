@@ -209,6 +209,9 @@ class AI_Player:
         ret: The evaluation of the position
         
         '''
+
+        self.nodes_searched +=1
+
         opponent = 'B' if player_to_move == 'W' else 'W'
 
         player_moves = board.get_legal_moves(player_to_move)
@@ -223,7 +226,7 @@ class AI_Player:
         if player_to_move == root:
             maxEval = -INF
             ordered_moves_max = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
-            for move in ordered_moves_max:
+            for move in player_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -237,7 +240,7 @@ class AI_Player:
         else:
             minEval = INF
             ordered_moves_min = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
-            for move in ordered_moves_min:
+            for move in player_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -263,6 +266,8 @@ class AI_Player:
         the best moeve
         
         '''
+        self.nodes_searched = 0 
+
         moves = board.get_legal_moves(player)
         best_Move = moves[0]
         opponent = 'B' if player =='W' else 'W'

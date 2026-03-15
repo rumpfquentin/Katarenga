@@ -611,7 +611,13 @@ class GameState: #This manages the game loop
 
     def ai_move(self,dt):
         color = self.colors[self.current_idx]
+
+        start = time.monotonic()
         move= self.ai.find_best_move(self.b, color, self.difficulty)
+        end = time.monotonic()
+        
+        print(f'Difficulty: {self.difficulty} | time taken: {(end-start):.3f}s | Nodes Searched: {self.ai.nodes_searched}')
+        
         move = Move(src=move[0], dst= move[1]) 
         self.events_apply_move(move)
         App.get_running_app().root.get_screen('Board').update_highlights(color)
