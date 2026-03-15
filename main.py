@@ -615,7 +615,7 @@ class GameState: #This manages the game loop
         start = time.monotonic()
         move= self.ai.find_best_move(self.b, color, self.difficulty)
         end = time.monotonic()
-        
+
         print(f'Difficulty: {self.difficulty} | time taken: {(end-start):.3f}s | Nodes Searched: {self.ai.nodes_searched}')
         
         move = Move(src=move[0], dst= move[1]) 
@@ -1096,6 +1096,9 @@ class KatarengaApp(App):
         board.refresh_board()
         board.gs.b.boardlayout = grid
         board.refresh_board()
+        over, winner, reason = board.gs.b.isOver()
+        if over:
+            board.gs.game_over = True
         board.gs.start_move()
         #Links the difficulty LOAD GAME GUI button to game logic
 
