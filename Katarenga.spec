@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('ui.kv', '.')],
+    datas=[('assets', 'assets'), ('katarenga.kv', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

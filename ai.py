@@ -210,7 +210,6 @@ class AI_Player:
         
         '''
 
-        self.nodes_searched +=1
 
         opponent = 'B' if player_to_move == 'W' else 'W'
 
@@ -222,11 +221,12 @@ class AI_Player:
         over, winner, reason = board.isOver()
         if over:
             return self.evaluate(board,root, player_moves, opponent_moves, player_to_move, depth)
+        
+        ordered_moves = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
 
         if player_to_move == root:
             maxEval = -INF
-            ordered_moves_max = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
-            for move in player_moves:
+            for move in ordered_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -239,8 +239,7 @@ class AI_Player:
             return maxEval
         else:
             minEval = INF
-            ordered_moves_min = self.order_moves(board, player_to_move, player_moves, opponent_moves, depth)
-            for move in player_moves:
+            for move in ordered_moves:
                 src, coords = move
                 ok, err, record = board.apply_move(player_to_move, src, coords)
                 assert ok, err
@@ -266,7 +265,6 @@ class AI_Player:
         the best moeve
         
         '''
-        self.nodes_searched = 0 
 
         moves = board.get_legal_moves(player)
         best_Move = moves[0]
