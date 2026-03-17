@@ -390,7 +390,7 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
         self.time_drop_down = StyledDropDown()
         
 
-        self.current_txt_w = 'human'
+        self.current_txt_w = 'Human'
         '''
         creates the dropdown buttons for the different difficulties
         '''
@@ -512,7 +512,7 @@ class GameState: #This manages the game loop
         '''
         self.ai_event = None
         self.end_move_event = None
-        self.players = ['human', 'ai']
+        self.players = ['Human', 'AI']
         self.b = Board()
         self.clock = GameClock()
         self.ai = AI_Player()
@@ -524,7 +524,7 @@ class GameState: #This manages the game loop
         self.capture_sound = SoundLoader.load(str(base_directory / 'assets' / 'capture.mp3'))
         self.AIs = []
         for i in range(len(self.players)):
-            if self.players[i] == 'ai':
+            if self.players[i] == 'AI':
                 self.AIs.append(self.colors[i])
 
 
@@ -538,18 +538,27 @@ class GameState: #This manages the game loop
             camps['W'].append(str(self.b.camps['W'][i]))
         for i in range(len(self.b.camps['B'])):
             camps['B'].append(str(self.b.camps['B'][i]))
+
         self.clock.update()
+
         white_time_remaining = self.clock.remaining['W']
         black_time_remaining = self.clock.remaining['B']
         time_remaining = f'{str(white_time_remaining)},{str(black_time_remaining)}'
         fisher_time = str(self.clock.fisher_time)
-    
+
+        white_time_initial = self.clock.initial_time['W']
+        black_time_initial = self.clock.initial_time['B']
+        time_initial = f'{str(white_time_initial)},{str(black_time_initial)}'
         data = {
-                "to_move": ['W', 'B'][self.current_idx],
+                "to move": ['W', 'B'][self.current_idx],
                 "camps": camps,
                 "grid": grid,
-                'time_remaining': time_remaining,
-                'fisher_time': fisher_time
+                'time remaining': time_remaining,
+                'time initial': time_initial,
+                'fisher time': fisher_time,
+                'game over': self.game_over,
+                'players': self.players
+
             }
 
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version 
@@ -571,6 +580,12 @@ class GameState: #This manages the game loop
         path = str(base / 'Savegame.json')
         with open(path, 'r') as f:
             loaded = json.load(f)
+
+        self.clock.pause()
+        self
+
+        self.stop_ai()#stops any scheduled ai calls from running and corrupting the board
+
         camps = loaded['camps']
         for i in range(len(camps['W'])):
             camps['W'][i] = Piece((camps["W"][i][0]),camps['W'][i][1:-1])
@@ -579,7 +594,7 @@ class GameState: #This manages the game loop
         self.b.camps = camps
         '''pieces in camps have been loaded from the json file and appended to the boards current camps
         '''
-        self.current_idx = ['W', 'B'].index(loaded['to_move']) #Makes sure it is the correct players turn.
+        self.current_idx = ['W', 'B'].index(loaded['to move']) #Makes sure it is the correct players turn.
         board = loaded['grid']
         colours = []
         for row in board:
@@ -596,15 +611,28 @@ class GameState: #This manages the game loop
         '''As the arrangement of colours of the baord changes the old boards colours have to be loaded and constructed into a board and then assigned to it
         This loop also recreated the pieces on each square.
         '''
-        time_remaining = loaded['time_remaining']
+        time_remaining = loaded['time remaining']
         time_remaining = time_remaining.split(',')
         self.clock.remaining['W'] = float(time_remaining[0])
         self.clock.remaining['B'] = float(time_remaining[1])
 
         '''The time remaining for white is stored first followed by black and hence time_remaining[0] is always whites remaining time
         '''
+        
+        time_initial = loaded['time initial']
+        time_initial = time_initial.split(',')
+        self.clock.initial_time['W'] = float(time_initial[0])
+        self.clock.initial_time['B'] = float(time_initial[1])
 
-        self.clock.fisher_time = float(loaded['fisher_time'])
+        self.game_over = loaded['game over']
+        self.players = loaded['players']
+
+        self.AIs = []
+        for i in range(len(self.players)):
+            if self.players[i] == 'AI':
+                self.AIs.append(self.colors[i])
+    
+        self.clock.fisher_time = float(loaded['fisher time'])
 
         return board
         
@@ -625,7 +653,7 @@ class GameState: #This manages the game loop
         if self.current_player not in self.AIs:
             self.clock.start(self.colors[self.current_idx])
         if not self.game_over:
-            if self.current_player == 'ai':
+            if self.current_player == 'AI':
                 if self.difficulty > 2:
                     self.ai_event = Clock.schedule_once(self.ai_move, 0.42)
                 else:
@@ -650,9 +678,6 @@ class GameState: #This manages the game loop
         if self.ai_event is not None:
             self.ai_event.cancel()
             self.ai_event = None
-        if self.end_move_event is not None:
-            self.end_move_event.cancel()
-            self.end_move_event = None
     @property
     def current_player(self): #useful property throughout the program as it allows to keep track of who's turn it is
         return self.players[self.current_idx]
@@ -686,14 +711,20 @@ class BoardView(Screen): #This class handles the way the board is graphically re
         self.refresh_board()
 
     def new_game(self): #sets up a fresh game where all the settings are dicated by the preset in gamestate
+        if self.gs:
+            self.gs.stop_ai()
+            self.gs.clock.pause()
+            self.gs.game_over = True
         self.selected = None
         difficulty = self.gs.difficulty
         players = self.gs.players
         time = self.gs.clock.initial_time
+        AIs = self.gs.AIs
         self.gs = None
         self.gs = GameState()
         self.gs.difficulty = difficulty
         self.gs.players = players
+        self.gs.AIs = AIs
         self.gs.clock.remaining = time
         self.highlights = []
         self.refresh_board()
@@ -870,7 +901,7 @@ class BoardView(Screen): #This class handles the way the board is graphically re
 
         self.highlights = []
 
-        if self.gs.players == ['ai', 'ai']:
+        if self.gs.players == ['AI', 'AI']:
             '''
             fixes bug: if the user switches to ai against ai dafter selecting a piece and creating the highlights
             the highlights would stay permamently as the player cannot deselect the piece as it isn't their turn.
@@ -909,12 +940,12 @@ class BoardView(Screen): #This class handles the way the board is graphically re
         if self.gs.game_over:
             return 
         else:
-            if self.gs.current_player == 'human':
+            if self.gs.current_player == 'Human':
                 player_color = self.gs.colors[self.gs.current_idx]
                 self.on_human_move(r,c,player_color)
                 '''if the player is human and it is their turn then the on_human_function can be called
                 '''
-            elif self.gs.current_player == 'ai':
+            elif self.gs.current_player == 'AI':
                 return 
 
         
@@ -941,6 +972,11 @@ class BoardView(Screen): #This class handles the way the board is graphically re
     def on_leave(self, *args):
         if self.gs:
             self.gs.stop_ai()
+            if self.gs.end_move_event is not None:
+                self.gs.end_move_event.cancel()
+                self.gs.end_move_event = None
+                self.gs.clock.pause()
+                self.gs.current_idx = (self.gs.current_idx+1) % (len(self.gs.players))
         return super().on_leave(*args)
 
     def on_enter(self, *args):
@@ -1091,10 +1127,10 @@ class KatarengaApp(App):
         board.refresh_board()
         board.gs.b.boardlayout = grid
         board.refresh_board()
-        over, winner, reason = board.gs.b.isOver()
-        if over:
-            board.gs.game_over = True
-        board.gs.start_move()
+
+        setup = sm.get_screen('Setup')
+        setup.player1 = f'White: {board.gs.players[0]}'
+        setup.player2 = f'Black: {board.gs.players[1]}'
         #Links the difficulty LOAD GAME GUI button to game logic
 
     def start_move(self):#This starts the start move and end move cycle included in the game logic
@@ -1106,10 +1142,10 @@ class KatarengaApp(App):
     def change_players(self, color, player):
         sm = self.root
         board = sm.get_screen('Board')
-        board.gs.players[color] = player.lower()
+        board.gs.players[color] = player
         board.gs.AIs = []
         for i in range(len(board.gs.players)):
-            if board.gs.players[i] == 'ai':
+            if board.gs.players[i] == 'AI':
                 board.gs.AIs.append(board.gs.colors[i])
         #When the player changes either white or black player this links that change to the players attribute in GameState
 
