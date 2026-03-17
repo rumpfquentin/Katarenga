@@ -58,7 +58,7 @@ class AI_Player:
                 score += 5_000
             
 
-            if board.colours[dst[0]][dst[1]] in ['R', 'Y']:
+            if board.colors[dst[0]][dst[1]] in ['R', 'Y']:
                 score += 2_000
 
             return score

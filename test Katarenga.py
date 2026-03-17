@@ -12,7 +12,7 @@ def board_str(b):
     bstring = []
     for r in range (8):
         for c in range(8):
-            square = b.colours[r][c]+ str(b.boardlayout[r][c]['piece'])
+            square = b.colors[r][c]+ str(b.boardlayout[r][c]['piece'])
             bstring.append(square)
     bstring.append(f"Wc:{len(b.camps['W'])}")
     bstring.append(f"Wb:{len(b.camps['B'])}")
@@ -37,9 +37,9 @@ class TestSetup(unittest.TestCase):
         for _ in range(50):
             b = Board()
             for c in range(8):
-                self.assertFalse(b.colours[0][c] == 'R' and b.colours[7][c] == 'R')
-                self.assertFalse(b.colours[0][0] == 'Y' and b.colours[7][7] == 'Y')
-                self.assertFalse(b.colours[0][7] == 'Y' and b.colours[7][0] == 'Y')
+                self.assertFalse(b.colors[0][c] == 'R' and b.colors[7][c] == 'R')
+                self.assertFalse(b.colors[0][0] == 'Y' and b.colors[7][7] == 'Y')
+                self.assertFalse(b.colors[0][7] == 'Y' and b.colors[7][0] == 'Y')
 
 class TestLegalMoves(unittest.TestCase):
     

@@ -596,19 +596,19 @@ class GameState: #This manages the game loop
         '''
         self.current_idx = ['W', 'B'].index(loaded['to move']) #Makes sure it is the correct players turn.
         board = loaded['grid']
-        colours = []
+        colors = []
         for row in board:
-            row_colours = []
+            row_colors = []
             for square in row:
                 if square['piece'] == 'None':
                     square['piece'] = None
                 else: 
                     colour, label = square['piece'][0], square['piece'][1:3]
                     square['piece'] = Piece(colour, label)
-                row_colours.append(square['colour'])
-            colours.append(row_colours)
-        self.b.colours = colours
-        '''As the arrangement of colours of the baord changes the old boards colours have to be loaded and constructed into a board and then assigned to it
+                row_colors.append(square['colour'])
+            colors.append(row_colors)
+        self.b.colors = colors
+        '''As the arrangement of colors of the baord changes the old boards colors have to be loaded and constructed into a board and then assigned to it
         This loop also recreated the pieces on each square.
         '''
         time_remaining = loaded['time remaining']
@@ -618,7 +618,7 @@ class GameState: #This manages the game loop
 
         '''The time remaining for white is stored first followed by black and hence time_remaining[0] is always whites remaining time
         '''
-        
+
         time_initial = loaded['time initial']
         time_initial = time_initial.split(',')
         self.clock.initial_time['W'] = float(time_initial[0])
@@ -662,6 +662,7 @@ class GameState: #This manages the game loop
         return   #if it is the player's turn the player can now interact with his pieces freely so the function can terminate
     
     def end_move(self): #game loop includes an endless start move and end move cycle until the game is won or lost
+        self.end_move_event = None #makes sure end_move() calls are never stacked.
         mover = self.colors[self.current_idx]
         self.clock.pause()
         self.current_idx = (self.current_idx + 1) % len(self.players) #changes the current idx to the next players 
@@ -775,7 +776,7 @@ class BoardView(Screen): #This class handles the way the board is graphically re
                         cell_image_source = str(base_directory/'assets'/'Brown_Square.png')
                         piece = None
                 else:  #applies the correct texture to the differntly coloured squares
-                    background_color = self.gs.b.colours[r-1][c-1]
+                    background_color = self.gs.b.colors[r-1][c-1]
                     piece =  self.gs.b.boardlayout[r-1][c-1]["piece"]
                     if background_color == 'Y':
                         cell_image_source =  str(base_directory/'assets'/'Yellow_Square.png')
@@ -1139,7 +1140,7 @@ class KatarengaApp(App):
 
         board.gs.start_move()
 
-    def change_players(self, color, player):
+    def change_players(self, color, player): #When the player changes either white or black player this links that change to the players attribute in GameState
         sm = self.root
         board = sm.get_screen('Board')
         board.gs.players[color] = player
@@ -1147,7 +1148,10 @@ class KatarengaApp(App):
         for i in range(len(board.gs.players)):
             if board.gs.players[i] == 'AI':
                 board.gs.AIs.append(board.gs.colors[i])
-        #When the player changes either white or black player this links that change to the players attribute in GameState
+        board.selected = None
+        board.highlights = []
+
+       
 
 if __name__ == "__main__":
     KatarengaApp().run()

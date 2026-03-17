@@ -30,20 +30,20 @@ class Board:
     def __init__(self):
         self.pieces = {'W': [], 'B': []}
         self.create_pieces()
-        self.colours = self.randomlayout()
+        self.colors = self.randomlayout()
         blacksside = 'bottom'
         if blacksside == 'bottom':
-            self.colours = Rotate180(self.colours)
+            self.colors = Rotate180(self.colors)
         elif blacksside == 'right':
-            self.colours = RotateAntiClockwise90(self.colours)
+            self.colors = RotateAntiClockwise90(self.colors)
         elif blacksside == 'left':
-            self.colours = RotateClockwise90(self.colours)
+            self.colors = RotateClockwise90(self.colors)
         #this allows the black player to chose its side of the board. If ai is black it just stays as is.
         board = []
         for rows in range(8): #iteratively creates the dictionary the grid row by row creating a 2-D list of dictionaries
             row = []
             for col in range(8):
-                row.append({'colour': self.colours[rows][col], 'piece': None})
+                row.append({'colour': self.colors[rows][col], 'piece': None})
             board.append(row)
         
         for col in range(8):
