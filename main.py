@@ -727,6 +727,7 @@ class BoardView(Screen): #This class handles the way the board is graphically re
         self.gs.players = players
         self.gs.AIs = AIs
         self.gs.clock.remaining = time
+        self.gs.clock.initial_time = time
         self.highlights = []
         self.refresh_board()
     
@@ -1132,6 +1133,17 @@ class KatarengaApp(App):
         setup = sm.get_screen('Setup')
         setup.player1 = f'White: {board.gs.players[0]}'
         setup.player2 = f'Black: {board.gs.players[1]}'
+        setup.difficulty_text = board.gs.difficulty
+        if board.gs.clock.initial_time['W'] == 600:
+            time_format = '10 min'
+        elif board.gs.clock.inital_time['W'] == 60 and board.gs.clock.fisher_time == 1:
+            time_format = '1|1'
+        elif board.gs.clock.inital_time['W'] == 60 and board.gs.clock.fisher_time == 0:
+            time_format = '1 min'
+        elif board.gs.clock.inital_time['W'] == 180 and board.gs.clock.fisher_time == 2:
+            time_format = '3|2'
+        setup.time_format = time_format
+
         #Links the difficulty LOAD GAME GUI button to game logic
 
     def start_move(self):#This starts the start move and end move cycle included in the game logic
