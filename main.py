@@ -388,7 +388,6 @@ class SetupScreen(Screen): #This class inherits from a Screen class but I overwr
         self.white_drop_down = StyledDropDown()
         self.black_drop_down = StyledDropDown()
         self.time_drop_down = StyledDropDown()
-        
 
         self.current_txt_w = 'Human'
         '''
@@ -561,22 +560,16 @@ class GameState: #This manages the game loop
 
             }
 
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version 
-            base = Path(sys._MEIPASS)
-        else:
-            base = Path(__file__).resolve().parent
-        #The base path ensures that whether launching from IDE or packaged .app version Savegame.json can be found
+        base = Path.home() / '.katarenga'
+        base.mkdir(exist_ok=True)
         path = str(base / 'Savegame.json')
         with open(path, 'w') as f:
             json.dump(data, f)
 
 
     def load_grid(self):
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): #checks whether launched from IDE or .app version
-            base = Path(sys._MEIPASS)
-        else:
-            base = Path(__file__).resolve().parent
-        #The base path ensures that whether launching from IDE or packaged .app version Savegame.json can be found
+        base = Path.home() / '.katarenga'
+        base.mkdir(exist_ok=True)
         path = str(base / 'Savegame.json')
         with open(path, 'r') as f:
             loaded = json.load(f)
@@ -1134,7 +1127,6 @@ class KatarengaApp(App):
         setup.player2 = f'Black: {board.gs.players[1]}'
         diff_map = ['Easy', 'Medium', 'Hard']
         difficulty = diff_map[board.gs.difficulty-1]
-        print(board.gs.difficulty)
         setup.difficulty_text = f'Difficulty: {difficulty}'
         if board.gs.clock.initial_time['W'] == 600:
             time_format = 'Time Format: 10 min'
