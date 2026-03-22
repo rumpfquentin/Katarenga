@@ -711,15 +711,17 @@ class BoardView(Screen): #This class handles the way the board is graphically re
         self.selected = None
         difficulty = self.gs.difficulty
         players = self.gs.players
-        time = self.gs.clock.initial_time
+        timing = dict(self.gs.clock.initial_time)
+        fisher_time = self.gs.clock.fisher_time
         AIs = self.gs.AIs
         self.gs = None
         self.gs = GameState()
         self.gs.difficulty = difficulty
         self.gs.players = players
         self.gs.AIs = AIs
-        self.gs.clock.remaining = time
-        self.gs.clock.initial_time = time
+        self.gs.clock.remaining = dict(timing)
+        self.gs.clock.initial_time = dict(timing)
+        self.gs.clock.fisher_time = fisher_time
         self.highlights = []
         self.refresh_board()
     
