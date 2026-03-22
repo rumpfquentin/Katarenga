@@ -113,7 +113,7 @@ class GameClock:
         self.initial_time = {'W': 600, "B": 600}
         self.current = None
         self.last_update = None
-        self.fisher_time = 3
+        self.fisher_time = 0
 
     def start(self, colour):
         ''' Starts the game clock for the given colour
@@ -231,7 +231,7 @@ class ClockWidget(BoxLayout):
         minutesb = int(b//60)
         secondsw = w%60
         secondsb = b%60
-        '''following code is used when the timer runs below 10 seconds. Below ten seconds the timer starts displaying hundredths of a second
+        '''following code is used when the timer runs below 10 seconds. Below ten seconds the timer starts displaying tenths of a second
         '''
         if secondsw < 10:  
             if  minutesw == 0:
@@ -511,6 +511,7 @@ class GameState: #This manages the game loop
         '''
         self.ai_event = None
         self.end_move_event = None
+        self.paused = False
         self.players = ['Human', 'AI']
         self.b = Board()
         self.clock = GameClock()
@@ -630,6 +631,8 @@ class GameState: #This manages the game loop
         
 
     def ai_move(self,dt):
+        if self.paused or self.game_over:
+            return
         color = self.colors[self.current_idx]
         move= self.ai.find_best_move(self.b, color, self.difficulty)
         
@@ -644,7 +647,7 @@ class GameState: #This manages the game loop
 
         if self.current_player not in self.AIs:
             self.clock.start(self.colors[self.current_idx])
-        if not self.game_over:
+        if not self.paused and not self.game_over:
             if self.current_player == 'AI':
                 if self.difficulty > 2:
                     self.ai_event = Clock.schedule_once(self.ai_move, 0.42)
@@ -669,6 +672,7 @@ class GameState: #This manages the game loop
 
     def stop_ai(self):
         if self.ai_event is not None:
+            self.paused = True
             self.ai_event.cancel()
             self.ai_event = None
     @property
@@ -965,19 +969,22 @@ class BoardView(Screen): #This class handles the way the board is graphically re
                 return True
         return False
 
-    def on_leave(self, *args):
+    def on_pre_leave(self, *args):
         if self.gs:
+            self.gs.paused = True
             self.gs.stop_ai()
             if self.gs.end_move_event is not None:
                 self.gs.end_move_event.cancel()
                 self.gs.end_move_event = None
                 self.gs.clock.pause()
                 self.gs.current_idx = (self.gs.current_idx+1) % (len(self.gs.players))
-        return super().on_leave(*args)
+        return super().on_pre_leave(*args)
 
     def on_enter(self, *args):
         if self.gs and not self.gs.game_over:
+            self.gs.paused = False
             self.gs.start_move()
+
         return super().on_enter(*args)
 
 class KatarengaApp(App):
