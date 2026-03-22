@@ -582,7 +582,6 @@ class GameState: #This manages the game loop
             loaded = json.load(f)
 
         self.clock.pause()
-        self
 
         self.stop_ai()#stops any scheduled ai calls from running and corrupting the board
 
@@ -1133,15 +1132,18 @@ class KatarengaApp(App):
         setup = sm.get_screen('Setup')
         setup.player1 = f'White: {board.gs.players[0]}'
         setup.player2 = f'Black: {board.gs.players[1]}'
-        setup.difficulty_text = board.gs.difficulty
+        diff_map = ['Easy', 'Medium', 'Hard']
+        difficulty = diff_map[board.gs.difficulty-1]
+        print(board.gs.difficulty)
+        setup.difficulty_text = f'Difficulty: {difficulty}'
         if board.gs.clock.initial_time['W'] == 600:
-            time_format = '10 min'
-        elif board.gs.clock.inital_time['W'] == 60 and board.gs.clock.fisher_time == 1:
-            time_format = '1|1'
-        elif board.gs.clock.inital_time['W'] == 60 and board.gs.clock.fisher_time == 0:
-            time_format = '1 min'
-        elif board.gs.clock.inital_time['W'] == 180 and board.gs.clock.fisher_time == 2:
-            time_format = '3|2'
+            time_format = 'Time Format: 10 min'
+        elif board.gs.clock.initial_time['W'] == 60 and board.gs.clock.fisher_time == 1:
+            time_format = 'Time Format: 1|1'
+        elif board.gs.clock.initial_time['W'] == 60 and board.gs.clock.fisher_time == 0:
+            time_format = 'Time Format: 1 min'
+        elif board.gs.clock.initial_time['W'] == 180 and board.gs.clock.fisher_time == 2:
+            time_format = 'Time Format: 3|2'
         setup.time_format = time_format
 
         #Links the difficulty LOAD GAME GUI button to game logic
