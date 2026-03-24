@@ -59,6 +59,9 @@ class AI_Player:
             
 
             if board.colors[dst[0]][dst[1]] in ['R', 'Y']:
+                '''landing on a red or yellow square has the potential to open up more moves and some open lines 
+                resulting in a greater chance of it being a good move.
+                '''
                 score += 2_000
 
             return score
@@ -89,17 +92,17 @@ class AI_Player:
             return  (-INF - depth)
         
         #differnet attributes of a position that the evaluate function compares, important here is that it's a zero-sum game so one person's loss is the other's gain
-
+        #C: How many more camped pieces compared to opponent
         C = (len(Board.camps[root_player]) - len(Board.camps[opponent]))
-
+        #D: Distance to camp of two closest pieces - lower is better
         D = two_best_distances_opponent - two_best_distances_player
-
+        #M: How many more total legal moves compared to opponent
         M = len(player_legal_moves) - len(opponent_legal_moves)
-
+        #P: How many more pieces than opponent.
         P = count_pieces_player - count_pieces_opponent
-
+        #How many pieces that cannot be taken by the opponent.
         S = self.safe_pieces(Board, root_player, opponent_legal_moves) - self.safe_pieces(Board, opponent, player_legal_moves)
-
+        #The number of pieces that can move unobstructed to the edge of a board on a red or yellow tile.
         O = open_lines_player - open_lines_opponent
 
 
@@ -123,8 +126,14 @@ class AI_Player:
                 + wS * S
                 + wO * O)
 
-    #all of the board iterations have been lumped together to increase efficiency
+    #all of the board iterations are evaluated together to increase efficiency
     def Board_Iterations(self, Board, player):
+        '''Scans the board once to collect three metrics for the given player:
+        open_lines: number of unblocked sliding paths from coloured squares
+        count: number of pieces remaining on the board
+        two_best_distances: sum of the two shortest distances to the back row,
+        used to estimate how close the player is to winning
+        '''
         open_lines = 0
         count = 0
         distances = []
@@ -135,6 +144,7 @@ class AI_Player:
                 if  piece is None or piece.player != player:
                     continue
                 count +=1
+                #Camp row is 7 for black and 0 for white. 
                 if player == 'W':
                     distances.append(r)
                 else:
@@ -149,7 +159,9 @@ class AI_Player:
                     continue
                 
                 for dr, dc in dirs:
-
+                    '''Walk along the same direction until we find a same coloured square a piece.
+                    If we reach the edge of the board it is an open line.
+                    '''
                     rr = dr + r #this offsets the starting row by the row we are currently on
                     cc = dc +c #this offsets the strating column by the column we are currently on
                     blocked = False
@@ -216,6 +228,8 @@ class AI_Player:
         player_moves = board.get_legal_moves(player_to_move)
         opponent_moves = board.get_legal_moves(opponent)
 
+        '''terminals: return static evaluation if we have hit depth 0 or the game has ended.
+        '''
         if depth == 0:
             return self.evaluate(board, root, player_moves, opponent_moves, player_to_move, depth)
         over, winner, reason = board.isOver()
@@ -272,7 +286,9 @@ class AI_Player:
 
         
         best_score = -INF
-
+        '''try each legal move, search the resulting position with minimax. 
+        Undo the move and find the move that yielded the highest evaluation.
+        '''
         for move in moves:
             src, coords = move
             ok, err, record = board.apply_move(player, src, coords)
