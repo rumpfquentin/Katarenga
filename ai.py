@@ -50,7 +50,7 @@ class AI_Player:
             else:
                 score += 1_000 * (dst[0] - src[0])
             
-            #moving a threatened piece to a save square
+            #moving a threatened piece to a safe square
             enemydsts = []
             for enemysrc, enemydst in current_opponent_moves:
                 enemydsts.append(enemydst)
@@ -65,8 +65,10 @@ class AI_Player:
                 score += 2_000
 
             return score
-
-        return sorted(current_player_moves, key= score_move, reverse=True)
+        scoredMoves = [(-(score_move(move)),move) for move in current_player_moves]
+        ordered_moves = self.merge_sort(scoredMoves)
+        return [move for score,move in ordered_moves]
+        
 
 
 
@@ -207,7 +209,44 @@ class AI_Player:
         unsafe = {m[1] for m in opponent_legal_moves if m[1]!="camp"}
         return sum(1 for r in range(8) for c in range(8) if (p:=Board.boardlayout[r][c]['piece']) and p.player==player and (r,c) not in unsafe)
 
-                        
+        
+    def merge_sort(self,array):
+            '''recursive function for merge sort
+            args: array
+            '''
+            if len(array)<=1: #Base case for mergesort
+                return array
+            else: #recursively splits the array until each list has only one item
+                middle = len(array)//2
+
+                leftArray = array[:middle]
+                rightArray = array[middle:]
+
+                sortedLeft = self.merge_sort(leftArray)
+                sortedRight = self.merge_sort(rightArray)
+
+            return self.merge(sortedLeft, sortedRight)#merges the lists during the recursion
+
+    def merge(self, leftArray, rightArray):
+        '''merges the two arrays into one sorted array
+        args: leftArray(list), rightArray(list)
+        '''
+        i = 0
+        j = 0
+        sortedArray = []
+        
+        while i < len(leftArray) and j < len(rightArray):
+            if leftArray[i] < rightArray[j]:
+                sortedArray.append(leftArray[i])
+                i+=1
+            else:
+                sortedArray.append(rightArray[j])
+                j+=1
+
+        
+        return sortedArray +leftArray[i:] + rightArray[j:] 
+
+
     def MiniMax(self, board, player_to_move,  depth, alpha, beta, root ):
         ''' calculates the best move for the player to move at the current position
 
@@ -303,4 +342,4 @@ class AI_Player:
 
         return best_Move
 
-        
+
